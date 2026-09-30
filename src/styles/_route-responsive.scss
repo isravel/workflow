@@ -1,0 +1,110 @@
+@use "tokens" as tokens;
+
+@media (max-width: tokens.$breakpoint-tablet) {
+  .page {
+    padding: max(16px, env(safe-area-inset-top)) 14px calc(32px + env(safe-area-inset-bottom));
+  }
+
+  .shell {
+    max-width: 100%;
+  }
+
+  .topline {
+    min-height: 52px;
+  }
+
+  .brand {
+    min-width: 0;
+    font-size: 17px;
+  }
+
+  .back {
+    min-height: 44px;
+  }
+
+  .content {
+    padding: 56px 0 calc(48px + env(safe-area-inset-bottom));
+  }
+
+  .settingsLayout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .settingsTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-right: 0;
+    padding-bottom: 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .categoryChecks {
+    width: 100%;
+  }
+
+  .categorySetting {
+    grid-template-columns: 1fr;
+  }
+
+  .categorySettingControls {
+    width: 100%;
+  }
+
+  .statGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .setting {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .fieldPair,
+  .backupActions,
+  .managementForm {
+    width: 100%;
+  }
+
+  .fieldPair > label,
+  .backupActions > *,
+  .managementForm > * {
+    flex: 1 1 140px;
+  }
+
+  .fieldPair select,
+  .managementForm input,
+  .managementForm select,
+  .setting .select,
+  .setting .toggle {
+    min-height: 44px;
+  }
+
+  .categorySettingControls {
+    grid-template-columns: 1fr;
+  }
+
+  .categorySettingControls select {
+    min-height: 44px;
+  }
+}
+
+@media (min-width: tokens.$breakpoint-tablet + 1px) and (max-width: tokens.$breakpoint-desktop - 1px) {
+  .page {
+    padding: 22px 24px 40px;
+  }
+
+  .shell {
+    max-width: 100%;
+  }
+
+  .content {
+    padding: 72px 0;
+  }
+
+  .statGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

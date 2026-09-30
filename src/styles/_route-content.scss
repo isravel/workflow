@@ -1,0 +1,550 @@
+@use "tokens" as tokens;
+
+.searchPanel,
+.statsPanel,
+.settingsPanel {
+  margin-top: 34px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: tokens.$radius-md;
+  background: var(--color-surface);
+}
+
+.settingsTabs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-self: start;
+  padding-right: 18px;
+  border-right: 1px solid var(--color-border);
+}
+
+.settingsLayout {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 24px;
+}
+
+.settingsTabContent {
+  min-width: 0;
+}
+
+.settingsTab {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 0 7px 7px 0;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.settingsTab strong {
+  font-size: 13px;
+}
+
+.settingsTab:hover,
+.settingsTab:focus-visible,
+.settingsTabActive {
+  border-left-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  outline: none;
+}
+
+.settingsTabPanel {
+  display: grid;
+  gap: 0;
+}
+
+.restDaysSetting {
+  align-items: flex-start;
+}
+
+.weekdayOptions {
+  display: grid;
+  width: min(100%, 360px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.weekdayOption {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface-muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.weekdayOption:has(input:checked) {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.weekdayOption input {
+  accent-color: var(--color-accent);
+}
+
+.restDayEditor {
+  display: grid;
+  width: min(100%, 360px);
+  gap: 10px;
+}
+
+.restDaysDateField {
+  display: grid;
+  gap: 5px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.restDaysDateField input {
+  min-height: 40px;
+  padding: 0 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.restDayCurrentStatus {
+  color: var(--color-accent-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.restDayActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.restDayButton {
+  min-height: 42px;
+  padding: 0 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.restDayButtonSelected,
+.restDayButton:hover,
+.restDayButton:focus-visible {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  outline: none;
+}
+
+.clearRestDayButton {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent-strong);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.searchField {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-accent);
+}
+
+.searchField input {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.resultList {
+  margin-top: 14px;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 2px;
+  border-top: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.result strong,
+.result span {
+  display: block;
+}
+
+.result span,
+.result time,
+.emptyResult,
+.stat span,
+.stat small,
+.setting span,
+.settingFootnote {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.result span {
+  margin-top: 4px;
+}
+
+.result time {
+  white-space: nowrap;
+}
+
+.emptyResult {
+  padding: 14px 2px 0;
+}
+
+.errorResult {
+  padding: 14px 2px 0;
+  color: var(--color-accent-strong);
+  font-size: 13px;
+}
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.stat {
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--color-surface-muted);
+}
+
+.stat span,
+.stat small {
+  display: block;
+}
+
+.stat strong {
+  display: block;
+  margin: 10px 0 5px;
+  font-family: Georgia, serif;
+  font-size: 25px;
+  font-weight: 400;
+}
+
+.categoryList {
+  margin-top: 22px;
+}
+
+.categoryRow {
+  display: grid;
+  grid-template-columns: 110px 1fr 70px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.categoryRow strong {
+  text-align: right;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.categoryBar {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--color-surface-muted);
+}
+
+.categoryBar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent);
+}
+
+.dailyList {
+  margin-top: 24px;
+}
+
+.dailyList h2 {
+  margin-bottom: 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dailyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 2px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.dailyRow strong {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dailyRow:hover {
+  color: var(--color-accent-strong);
+}
+
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.setting strong,
+.setting span {
+  display: block;
+}
+
+.setting span {
+  margin-top: 5px;
+}
+
+.fieldPair {
+  display: flex;
+  gap: 8px;
+}
+
+.fieldPair label {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.fieldPair select,
+.select,
+.toggle {
+  display: block;
+  min-height: 38px;
+  margin-top: 4px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.toggle {
+  min-width: 74px;
+  margin-top: 0;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.backupActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.categoryChecks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  gap: 8px 12px;
+  font-size: 13px;
+}
+
+.categoryChecks label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.categoryChecks input {
+  accent-color: var(--color-accent);
+}
+
+.categorySettingsSetting {
+  align-items: flex-start;
+}
+
+.categorySettings {
+  display: grid;
+  width: min(100%, 620px);
+  gap: 8px;
+}
+
+.categorySetting {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(260px, 1.5fr);
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.categorySettingName {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.managementSetting {
+  align-items: flex-start;
+}
+
+.managementPanel {
+  display: grid;
+  width: min(100%, 620px);
+  gap: 12px;
+}
+
+.managementForm {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.managementForm label {
+  flex: 1 1 150px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.managementForm input,
+.managementForm select {
+  display: block;
+  width: 100%;
+  min-height: 34px;
+  margin-top: 4px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.managementForm .toggle {
+  flex: 0 0 auto;
+}
+
+.managementList {
+  display: grid;
+  gap: 5px;
+}
+
+.managementListLabel {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.managementRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--color-border);
+  font-size: 13px;
+}
+
+.textButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent-strong);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.categorySettingName strong {
+  font-size: 13px;
+}
+
+.categoryColorDot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  margin-top: 0;
+  border-radius: 50%;
+}
+
+.categorySettingControls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.categorySettingControls label {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.categorySettingControls select {
+  width: 100%;
+  min-height: 34px;
+  margin-top: 4px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.fileInput {
+  display: none;
+}
+
+.persistenceNotice {
+  margin-top: 14px;
+  color: var(--color-accent-strong);
+  font-size: 13px;
+}
+
+.settingFootnote {
+  padding-top: 14px;
+}

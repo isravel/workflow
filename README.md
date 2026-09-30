@@ -1,4 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WorkFlow Journal
+
+The frontend for a personal visual work journal. The application lives in `app/` beside the product specifications.
+
+## Commands
+
+Run these from `app/` with Node 20.11 or newer:
+
+```bash
+npm run dev
+npm run lint
+npm run typecheck
+npm run stylelint
+npm run build
+npm run test:unit
+npm run test:e2e
+npm run test:e2e:pwa
+```
+
+The app uses Next.js 16.3.3, React 19, TypeScript strict mode, Sass modules, and static export. Activities and tasks are persisted in browser `localStorage` by default. To share the same journal data between browsers on one computer, run the separate `../data-app` service and add this to `.env.local`:
+
+```env
+NEXT_PUBLIC_ACTIVITY_API_URL=http://127.0.0.1:7001
+```
+
+Use the Settings backup controls before clearing browser data. The supported browser target is the current evergreen desktop, tablet, and mobile browsers with Pointer Events and Web Storage support.
+
+## PWA and offline behavior
+
+The production build emits an installable WorkFlow Journal PWA in `out/`. It includes a web manifest, app icons, and a service worker that caches the app shell and previously visited routes. Activity changes continue to save in this browser while offline.
+
+The optional activity API remains best-effort. If it is unavailable, local activity data is still saved and the app shows that remote sync is unavailable. It does not queue background sync or merge remote conflicts.
+
+Deploy the `out/` directory over HTTPS. The host must serve `/sw.js` as JavaScript, avoid long-lived caching for that file, and route the four application paths (`/`, `/search`, `/statistics`, and `/settings`) to their exported HTML files. Run `npm run test:e2e:pwa` to validate the built export locally.
 
 ## Getting Started
 
@@ -13,6 +46,14 @@ pnpm dev
 # or
 bun dev
 ```
+
+To start both the frontend and the data service in one terminal:
+
+```bash
+npm run dev:all
+```
+
+Press `Ctrl+C` to stop both services.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
