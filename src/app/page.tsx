@@ -66,7 +66,6 @@ import { durationMinutesFromInput } from "@/domain/parsing";
 import { buildTimelineLayout, timelineLayoutConstants } from "@/domain/timelineLayout";
 import { layoutModeForWidth, responsiveBreakpoints, timelineLaneCapForMode, type LayoutMode } from "@/domain/layoutMode";
 import { loadJournal, saveJournal } from "@/repositories/activityRepository";
-import styles from "../styles/page.module.scss";
 
 const defaultActivityMinutes = 45;
 const viewModeStorageKey = "workflow.viewMode";
@@ -329,23 +328,23 @@ const categoryRadioGroup = (
   onChange: (value: string) => void,
   name: string,
 ) => (
-  <fieldset className={styles.radioFieldset}>
-    <legend className={styles.fieldLabel}>Category</legend>
-    <div className={styles.radioOptions}>
+  <fieldset className={"choice-group"}>
+    <legend className={"form-field__label"}>Category</legend>
+    <div className={"choice-group__options"}>
       {availableCategories.map((category) => (
         <label
-          className={`${styles.radioOption} ${value === category.id ? styles.radioOptionSelected : ""}`}
+          className={`${"choice-group__option"} ${value === category.id ? "choice-group__option--selected" : ""}`}
           key={category.id}
         >
           <input
-            className={styles.radioInput}
+            className={"choice-group__input"}
             type="radio"
             name={name}
             value={category.id}
             checked={value === category.id}
             onChange={(event) => onChange(event.target.value)}
           />
-          <span className={styles.radioOptionIcon} aria-hidden="true">{iconForCategory(category.id)}</span>
+          <span className={"choice-group__icon"} aria-hidden="true">{iconForCategory(category.id)}</span>
           <span>{category.name}</span>
         </label>
       ))}
@@ -358,23 +357,23 @@ const priorityRadioGroup = (
   value: ActivityPriority,
   onChange: (value: ActivityPriority) => void,
 ) => (
-  <fieldset className={styles.radioFieldset}>
-    <legend className={styles.fieldLabel}>Priority</legend>
-    <div className={styles.radioOptions}>
+  <fieldset className={"choice-group"}>
+    <legend className={"form-field__label"}>Priority</legend>
+    <div className={"choice-group__options"}>
       {priorityOptions.map((priority) => (
         <label
-          className={`${styles.radioOption} ${value === priority ? styles.radioOptionSelected : ""}`}
+          className={`${"choice-group__option"} ${value === priority ? "choice-group__option--selected" : ""}`}
           key={priority}
         >
           <input
-            className={styles.radioInput}
+            className={"choice-group__input"}
             type="radio"
             name="activity-priority"
             value={priority}
             checked={value === priority}
             onChange={(event) => onChange(event.target.value as ActivityPriority)}
           />
-          <span className={`${styles.priorityDot} ${priority === "low" ? styles.priorityLow : ""} ${priority === "normal" ? styles.priorityNormal : ""} ${priority === "high" ? styles.priorityHigh : ""}`} aria-hidden="true" />
+          <span className={`${"priority-dot"} ${priority === "low" ? "priority-dot--low" : ""} ${priority === "normal" ? "priority-dot--normal" : ""} ${priority === "high" ? "priority-dot--high" : ""}`} aria-hidden="true" />
           <span>{priority.replace(/[-_]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase())}</span>
         </label>
       ))}
@@ -387,28 +386,28 @@ const colorRadioGroup = (
   onChange: (value: ActivityColorToken | "") => void,
   name: string,
 ) => (
-  <fieldset className={styles.radioFieldset}>
-    <legend className={styles.fieldLabel}>Color</legend>
-    <div className={styles.colorOptions}>
-      <label className={`${styles.radioOption} ${styles.colorOption} ${value === "" ? styles.radioOptionSelected : ""}`}>
+  <fieldset className={"choice-group"}>
+    <legend className={"form-field__label"}>Color</legend>
+    <div className={"color-options"}>
+      <label className={`${"choice-group__option"} ${"color-option"} ${value === "" ? "choice-group__option--selected" : ""}`}>
         <input
-          className={styles.radioInput}
+          className={"choice-group__input"}
           type="radio"
           name={name}
           value=""
           checked={value === ""}
           onChange={() => onChange("")}
         />
-        <span className={`${styles.colorSwatch} ${styles.colorSwatchDefault}`} aria-hidden="true" />
+        <span className={`${"color-swatch"} ${"color-swatch--default"}`} aria-hidden="true" />
         <span>Category default</span>
       </label>
       {activityColorOptions.map((option) => (
         <label
-          className={`${styles.radioOption} ${styles.colorOption} ${value === option.token ? styles.radioOptionSelected : ""}`}
+          className={`${"choice-group__option"} ${"color-option"} ${value === option.token ? "choice-group__option--selected" : ""}`}
           key={option.token}
         >
           <input
-            className={styles.radioInput}
+            className={"choice-group__input"}
             type="radio"
             name={name}
             value={option.token}
@@ -416,7 +415,7 @@ const colorRadioGroup = (
             onChange={() => onChange(option.token)}
           />
           <span
-            className={styles.colorSwatch}
+            className={"color-swatch"}
             style={{ "--activity-swatch": `var(--activity-color-${option.token})` } as CSSProperties & { "--activity-swatch": string }}
             aria-hidden="true"
           />
@@ -433,7 +432,7 @@ const taskPicker = (
   onChange: (value: string) => void,
   name: string,
 ) => (
-  <label className={styles.field}>
+  <label className={"form-field"}>
     <span>Task <small>optional</small></span>
     <select name={name} value={value} onChange={(event) => onChange(event.target.value)}>
       <option value="">No linked task</option>
@@ -1627,7 +1626,7 @@ export default function Home() {
         ↗
       </button>
       <button
-        className={styles.activityDeleteButton}
+        className={"activity__delete-button"}
         type="button"
         aria-label={`Delete ${activity.title}`}
         title="Delete"
@@ -1734,7 +1733,7 @@ export default function Home() {
     const direction = active ? tableSort.direction : "none";
     return (
       <button
-        className={`${styles.tableSortButton} ${active ? styles.tableSortButtonActive : ""}`}
+        className={`${"activity-table__sort-button"} ${active ? "activity-table__sort-button--active" : ""}`}
         type="button"
         aria-label={`Sort by ${tableSortLabels[key]}${active ? ` ${tableSort.direction === "asc" ? "ascending" : "descending"}` : ""}`}
         onClick={() => setTableSortKey(key)}
@@ -1755,49 +1754,49 @@ export default function Home() {
     });
 
   return (
-    <div className={`${styles.page} ${viewMode !== "timeline" ? styles.standardPage : ""}`} data-hydrated={hydrated ? "true" : "false"}>
-      <main className={styles.shell}>
-        <header className={styles.header}>
-          <Link className={styles.brand} href="/" aria-label="WorkFlow Journal home">
-            <span className={styles.brandMark}>W</span>
+    <div className={`${"app"} ${viewMode !== "timeline" ? "app--standard" : ""}`} data-hydrated={hydrated ? "true" : "false"}>
+      <main className={"app__shell"}>
+        <header className={"app__header"}>
+          <Link className={"brand"} href="/" aria-label="WorkFlow Journal home">
+            <span className={"brand__mark"}>W</span>
             WorkFlow Journal
           </Link>
-          <nav className={styles.nav} aria-label="Primary navigation">
-            <Link aria-label="Timeline" className={`${styles.navLink} ${styles.navActive}`} href="/"><CalendarDays size={15} /><span>Timeline</span></Link>
-            <Link aria-label="Search" className={styles.navLink} href="/search"><Search size={15} /><span>Search</span></Link>
-            <Link aria-label="Statistics" className={styles.navLink} href="/statistics"><BarChart3 size={15} /><span>Statistics</span></Link>
-            <Link aria-label="Settings" className={styles.navLink} href="/settings"><Settings size={15} /><span>Settings</span></Link>
+          <nav className={"navigation"} aria-label="Primary navigation">
+            <Link aria-label="Timeline" className={`${"navigation__link"} ${"navigation__link--active"}`} href="/"><CalendarDays size={15} /><span>Timeline</span></Link>
+            <Link aria-label="Search" className={"navigation__link"} href="/search"><Search size={15} /><span>Search</span></Link>
+            <Link aria-label="Statistics" className={"navigation__link"} href="/statistics"><BarChart3 size={15} /><span>Statistics</span></Link>
+            <Link aria-label="Settings" className={"navigation__link"} href="/settings"><Settings size={15} /><span>Settings</span></Link>
           </nav>
-          <div className={styles.headerActions}>
-            <button className={styles.iconButton} type="button" aria-label="Help" title="Help"><CircleHelp size={17} /></button>
-            <button className={styles.iconButton} type="button" aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`} title="Toggle theme" onClick={toggleTheme}>
+          <div className={"app__header-actions"}>
+            <button className={"button-icon"} type="button" aria-label="Help" title="Help"><CircleHelp size={17} /></button>
+            <button className={"button-icon"} type="button" aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`} title="Toggle theme" onClick={toggleTheme}>
               {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
             </button>
-            <button className={styles.primaryButton} type="button" onClick={addActivity}><Plus size={15} /> New activity</button>
+            <button className={"button-primary"} type="button" onClick={addActivity}><Plus size={15} /> New activity</button>
           </div>
         </header>
 
         {/*
-          <section className={styles.intro} aria-labelledby="timeline-title">
+          <section className={"app__intro"} aria-labelledby="timeline-title">
             <div>
-              <p className={styles.eyebrow}>{formatMonthLabel(selectedDate)}</p>
-              <h1 className={styles.title} id="timeline-title">Make the day legible.</h1>
+              <p className={"app__eyebrow"}>{formatMonthLabel(selectedDate)}</p>
+              <h1 className={"app__title"} id="timeline-title">Make the day legible.</h1>
             </div>
-            <p className={styles.subtitle}>A quiet record of where your attention went, one block at a time.</p>
+            <p className={"app__subtitle"}>A quiet record of where your attention went, one block at a time.</p>
           </section>
           */}
 
-        <section className={`${styles.timelinePanel} ${viewMode !== "timeline" ? styles.standardView : ""}`} aria-label="Work timeline">
-          <div className={styles.timelineToolbar} data-timeline-toolbar="true">
-            <div className={styles.dateControls}>
-              <button className={styles.iconButton} type="button" aria-label="Previous month" title="Previous month" onClick={() => setSelectedDate((current) => addMonths(current, -1))}><ChevronLeft size={17} /></button>
-              <button className={styles.iconButton} type="button" aria-label="Next month" title="Next month" onClick={() => setSelectedDate((current) => addMonths(current, 1))}><ChevronRight size={17} /></button>
-              <button className={styles.textButton} type="button" onClick={() => setSelectedDate(todayIso)}><Clock3 size={14} /> Today</button>
-              <p className={styles.dateLabel}>{formatMonthLabel(selectedDate)}<span>{preferences.timezone}</span></p>
+        <section className={`${"timeline"} ${viewMode !== "timeline" ? "timeline--standard" : ""}`} aria-label="Work timeline">
+          <div className={"timeline__toolbar"} data-timeline-toolbar="true">
+            <div className={"timeline__date-controls"}>
+              <button className={"button-icon"} type="button" aria-label="Previous month" title="Previous month" onClick={() => setSelectedDate((current) => addMonths(current, -1))}><ChevronLeft size={17} /></button>
+              <button className={"button-icon"} type="button" aria-label="Next month" title="Next month" onClick={() => setSelectedDate((current) => addMonths(current, 1))}><ChevronRight size={17} /></button>
+              <button className={"button-text"} type="button" onClick={() => setSelectedDate(todayIso)}><Clock3 size={14} /> Today</button>
+              <p className={"timeline__date-label"}>{formatMonthLabel(selectedDate)}<span>{preferences.timezone}</span></p>
             </div>
-            <div className={styles.toolbarActions}>
+            <div className={"toolbar__actions"}>
               <button
-                className={`${styles.textButton} ${tasksOpen ? styles.taskToolbarButtonActive : ""}`}
+                className={`${"button-text"} ${tasksOpen ? "button-text--active" : ""}`}
                 type="button"
                 aria-expanded={tasksOpen}
                 aria-controls="task-drawer"
@@ -1806,20 +1805,22 @@ export default function Home() {
                 <ListTodo size={14} /> Tasks{tasks.length > 0 ? ` · ${tasks.length}` : ""}
               </button>
               <button
-                className={`${styles.textButton} ${showRestDays ? styles.restDaysToolbarButtonActive : ""}`}
+                className={`${"button-text"} ${showRestDays ? "button-text--active" : ""}`}
                 type="button"
                 aria-pressed={showRestDays}
+                data-setting="rest-days-visibility"
+                data-setting-scope="view"
                 title="Toggle rest-day rows for this view"
                 onClick={() => setShowRestDays((current) => !current)}
               >
                 <CalendarDays size={14} /> Rest days · {showRestDays ? "Shown" : "Hidden"}
               </button>
-              {runningActivity && <div className={styles.timer}><span className={styles.timerDot} /> In progress · {formatElapsed(runningActivity.startAt)}</div>}
-              <button className={styles.textButton} type="button" onClick={toggleTimer}>{runningActivity ? <><Clock3 size={14} /> Stop timer</> : <><Play size={14} /> Start timer</>}</button>
-              <div className={styles.viewSwitcher} role="group" aria-label="Activity view">
+              {runningActivity && <div className={"timer"}><span className={"timer__dot"} /> In progress · {formatElapsed(runningActivity.startAt)}</div>}
+              <button className={"button-text"} type="button" onClick={toggleTimer}>{runningActivity ? <><Clock3 size={14} /> Stop timer</> : <><Play size={14} /> Start timer</>}</button>
+              <div className={"view-switcher"} role="group" aria-label="Activity view">
                 {viewModeOptions.map((option) => (
                   <button
-                    className={`${styles.viewButton} ${viewMode === option.value ? styles.viewButtonActive : ""}`}
+                    className={`${"view-switcher__button"} ${viewMode === option.value ? "view-switcher__button--active" : ""}`}
                     type="button"
                     key={option.value}
                     aria-pressed={viewMode === option.value}
@@ -1829,15 +1830,15 @@ export default function Home() {
                   </button>
                 ))}
               </div>
-              <details className={styles.appearanceMenu} data-appearance-menu>
-                <summary className={styles.iconButton} aria-label="Timeline appearance" title="Timeline appearance"><Palette size={16} /></summary>
-                <div className={styles.appearancePopover} role="group" aria-label="Accent theme">
-                  <strong className={styles.appearanceTitle}>Accent theme</strong>
-                  <span className={styles.appearanceDescription}>Choose a palette color for the interface.</span>
-                  <div className={styles.appearanceOptions}>
+              <details className={"appearance"} data-appearance-menu>
+                <summary className={"button-icon"} aria-label="Timeline appearance" title="Timeline appearance"><Palette size={16} /></summary>
+                <div className={"appearance__popover"} role="group" aria-label="Accent theme">
+                  <strong className={"appearance__title"}>Accent theme</strong>
+                  <span className={"appearance__description"}>Choose a palette color for the interface.</span>
+                  <div className={"appearance__options"}>
                     {activityColorOptions.map((option) => (
                       <button
-                        className={`${styles.appearanceOption} ${accentTheme === option.token ? styles.appearanceOptionSelected : ""}`}
+                        className={`${"appearance__option"} ${accentTheme === option.token ? "appearance__option--selected" : ""}`}
                         type="button"
                         key={option.token}
                         aria-label={`${option.label} theme`}
@@ -1846,7 +1847,7 @@ export default function Home() {
                         onClick={() => selectAccentTheme(option.token)}
                       >
                         <span
-                          className={styles.appearanceSwatch}
+                          className={"appearance__swatch"}
                           aria-hidden="true"
                           style={{ background: `var(--activity-color-${option.token})` }}
                         />
@@ -1861,16 +1862,16 @@ export default function Home() {
 
           {viewMode === "timeline" && (
             <>
-          <div className={styles.timeHeaderViewport} data-time-header="true">
+          <div className={"timeline__time-header-viewport"} data-time-header="true">
             <div
-              className={styles.timeHeader}
+              className={"timeline__time-header"}
               style={{ transform: `translateX(-${timelineScrollLeft}px)` }}
             >
-              <div className={styles.timeHeaderLabel}>Local time</div>
-              <div className={styles.hours} data-time-hours="true" style={{ "--hour-count": String(hours.length) } as TimelineStyle}>{hours.map((hour) => <span key={hour}>{hour}</span>)}</div>
+              <div className={"timeline__time-header-label"}>Local time</div>
+              <div className={"timeline__hours"} data-time-hours="true" style={{ "--hour-count": String(hours.length) } as TimelineStyle}>{hours.map((hour) => <span key={hour}>{hour}</span>)}</div>
               {isCurrentTimeVisible && (
                 <div
-                  className={styles.currentTimeHeaderLine}
+                  className={"timeline__current-time-header-line"}
                   aria-hidden="true"
                   style={{ "--now-position": nowPosition } as TimelineStyle}
                 />
@@ -1879,13 +1880,13 @@ export default function Home() {
           </div>
           <div
             ref={timelineScrollRef}
-            className={styles.timelineScroll}
+            className={"timeline__scroll"}
             data-timeline-scroll="true"
             onScroll={(event) => setTimelineScrollLeft(event.currentTarget.scrollLeft)}
           >
             {isCurrentTimeVisible && (
               <div
-                className={styles.currentTimeLine}
+                className={"timeline__current-time-line"}
                 data-current-time-marker="true"
                 aria-label="Current time"
                 style={{ "--now-position": nowPosition } as TimelineStyle}
@@ -1901,31 +1902,31 @@ export default function Home() {
               const laterCount = dayActivities.filter((activity) => activityRange(activity).endMinutes > timelineEndMinutes).length;
               return (
               <div
-                className={`${styles.dayRow} ${date.iso === todayIso ? styles.today : ""}`}
+                className={`${"timeline__day-row"} ${date.iso === todayIso ? "timeline__day-row--today" : ""}`}
                 key={date.iso}
                 style={{ "--row-height": `${rowHeight}px` } as TimelineStyle}
               >
-                <div className={styles.dayMeta}>
-                  <div className={styles.dayName}>
+                <div className={"timeline__day-meta"}>
+                  <div className={"timeline__day-name"}>
                     <span>{date.day}</span>
-                    <span className={styles.dayPills}>
-                      {date.iso === todayIso && <span className={styles.todayPill}>Today</span>}
+                    <span className={"timeline__day-pills"}>
+                      {date.iso === todayIso && <span className={"timeline__today-pill"}>Today</span>}
                       {showRestDays && restDayStatus && (
-                        <span className={styles.restDayPill}>{restDayLabel(restDayStatus)}</span>
+                        <span className={"timeline__rest-day-pill"}>{restDayLabel(restDayStatus)}</span>
                       )}
                     </span>
                   </div>
-                  <div className={styles.dayDate}>{date.date}</div>
-                  <div className={styles.daySummary}>{summaryForDate(date.iso)}</div>
+                  <div className={"timeline__day-date"}>{date.date}</div>
+                  <div className={"timeline__day-summary"}>{summaryForDate(date.iso)}</div>
                   {(earlierCount > 0 || laterCount > 0) && (
-                    <div className={styles.dayOverflow} aria-label="Activities outside the visible time range">
+                    <div className={"timeline__day-overflow"} aria-label="Activities outside the visible time range">
                       {earlierCount > 0 && <span>← {earlierCount} earlier</span>}
                       {laterCount > 0 && <span>{laterCount} later →</span>}
                     </div>
                   )}
                 </div>
                 <div
-                  className={styles.track}
+                  className={"timeline__track"}
                   data-timeline-track={date.iso}
                   style={{ "--hour-count": String(hours.length) } as TimelineStyle}
                   onPointerDown={(event) => handleTrackPointerDown(event, date.iso)}
@@ -1935,7 +1936,7 @@ export default function Home() {
                 >
                   {layout.gaps.map((gap) => (
                     <button
-                      className={styles.timelineGap}
+                      className={"timeline__gap"}
                       key={`${gap.startMinutes}-${gap.endMinutes}`}
                       type="button"
                       style={positionForRange(gap.startMinutes, gap.endMinutes)}
@@ -1971,7 +1972,7 @@ export default function Home() {
                       : `${formatTime(activity.startAt)} – ${activity.endAt ? formatTime(activity.endAt) : "now"}`;
                     return (
                       <div
-                        className={`${styles.activity} ${isSelected ? styles.activitySelected : ""} ${isSelected && isCompact ? styles.activityPopoverOpen : ""} ${isDragging ? styles.activityDragging : ""} ${isResizing ? styles.activityResizing : ""}`}
+                        className={`${"activity"} ${isSelected ? "activity--selected" : ""} ${isSelected && isCompact ? "activity--popover-open" : ""} ${isDragging ? "activity--dragging" : ""} ${isResizing ? "activity--resizing" : ""}`}
                         data-activity-id={activity.id}
                         data-compact={isCompact ? "true" : "false"}
                         key={activity.id}
@@ -1998,44 +1999,44 @@ export default function Home() {
                         onPointerDown={(event) => startActivityGesture(event, activity)}
                         onKeyDown={(event) => handleActivityKeyDown(event, activity)}
                       >
-                        <span className={styles.activityIcon}>{iconForCategory(category.id)}</span>
-                        <span className={styles.activityBody}>
-                          <span className={styles.activityTitle}>{activity.title}</span>
-                          <span className={styles.activityTime}>{timeLabel}</span>
+                        <span className={"activity__icon"}>{iconForCategory(category.id)}</span>
+                        <span className={"activity__body"}>
+                          <span className={"activity__title"}>{activity.title}</span>
+                          <span className={"activity__time"} data-activity-time={activity.id}>{timeLabel}</span>
                         </span>
                         {isSelected && !isCompact && (
-                          <div className={styles.activityActions} role="toolbar" aria-label={`Actions for ${activity.title}`}>
+                          <div className={"activity__actions"} role="toolbar" aria-label={`Actions for ${activity.title}`}>
                             {activityActionButtons(activity)}
                           </div>
                         )}
                         {isSelected && isCompact && (
                           <div
-                            className={`${styles.activityPopover} ${popoverAbove ? styles.activityPopoverAbove : styles.activityPopoverBelow} ${popoverRight ? styles.activityPopoverRight : ""}`}
+                            className={`${"activity-popover"} ${popoverAbove ? "activity-popover--above" : "activity-popover--below"} ${popoverRight ? "activity-popover--right" : ""}`}
                             role="dialog"
                             aria-label={`Details for ${activity.title}`}
                             onPointerDown={(event) => event.stopPropagation()}
                           >
-                            <div className={styles.activityPopoverHeader}>
-                              <div className={styles.activityPopoverHeading}>
+                            <div className={"activity-popover__header"}>
+                              <div className={"activity-popover__heading"}>
                                 <strong>{activity.title}</strong>
                                 <span>{category.name} · {timeLabel}</span>
                               </div>
                             </div>
-                            <div className={styles.activityPopoverMeta}>
+                            <div className={"activity-popover__meta"}>
                               <span>{durationLabel}</span>
                               <span>{activity.priority ?? defaultPriorityForCategory(preferences, category.id)} priority</span>
                               {linkedTask && <span>Task: {linkedTask.title}</span>}
                             </div>
-                            {activity.notes && <p className={styles.activityPopoverNotes}>{activity.notes}</p>}
+                            {activity.notes && <p className={"activity-popover__notes"}>{activity.notes}</p>}
                             {activity.tags.length > 0 && (
-                              <div className={styles.activityPopoverTags}>
+                              <div className={"activity-popover__tags"}>
                                 {activity.tags.map((tag) => <span key={tag}>#{tag}</span>)}
                               </div>
                             )}
-                            <div className={styles.activityPopoverActions} role="toolbar" aria-label={`Actions for ${activity.title}`}>
+                            <div className={"activity-popover__actions"} role="toolbar" aria-label={`Actions for ${activity.title}`}>
                               {activityActionButtons(activity)}
                               <button
-                                className={styles.activityPopoverClose}
+                                className={"activity-popover__close"}
                                 type="button"
                                 aria-label={`Close details for ${activity.title}`}
                                 title="Close"
@@ -2053,7 +2054,7 @@ export default function Home() {
                         {isSelected && (
                           <>
                             <span
-                              className={`${styles.activityHandle} ${styles.activityHandleStart}`}
+                              className={`${"activity__handle"} ${"activity__handle--start"}`}
                               ref={(node) => {
                                 if (node) startHandleRefs.current.set(activity.id, node);
                                 else startHandleRefs.current.delete(activity.id);
@@ -2066,7 +2067,7 @@ export default function Home() {
                             />
                             {activity.endAt !== null && (
                               <span
-                                className={`${styles.activityHandle} ${styles.activityHandleEnd}`}
+                                className={`${"activity__handle"} ${"activity__handle--end"}`}
                                 role="button"
                                 tabIndex={resizeMode ? 0 : -1}
                                 aria-label={`Resize end of ${activity.title}`}
@@ -2081,7 +2082,7 @@ export default function Home() {
                   })}
                   {layout.hiddenCount > 0 && (
                     <button
-                      className={styles.moreActivities}
+                      className={"timeline__more"}
                       type="button"
                       onClick={() => setSelectedDate(date.iso)}
                       aria-label={`${layout.hiddenCount} more activities on ${date.date}`}
@@ -2091,7 +2092,7 @@ export default function Home() {
                   )}
                   {gesture?.kind === "create" && gesture.dayIso === date.iso && (
                     <div
-                      className={styles.activityPreview}
+                      className={"timeline__activity-preview"}
                       style={{
                         ...positionForRange(gesture.previewStartMinutes, gesture.previewEndMinutes),
                         "--activity-color": "var(--color-accent)",
@@ -2102,7 +2103,7 @@ export default function Home() {
                       {formatWallTime(gesture.previewStartMinutes)} – {formatWallTime(gesture.previewEndMinutes)}
                     </div>
                   )}
-                  {dayActivities.length === 0 && <span className={styles.emptyDay}>Nothing recorded yet.</span>}
+                  {dayActivities.length === 0 && <span className={"timeline__empty"}>Nothing recorded yet.</span>}
                 </div>
               </div>
               );
@@ -2112,22 +2113,22 @@ export default function Home() {
           )}
 
           {viewMode === "kanban" && (
-            <div className={styles.kanbanScroll} data-view="kanban">
-              <div className={styles.kanbanBoard}>
+            <div className={"kanban"} data-view="kanban">
+              <div className={"kanban__board"}>
                 {kanbanDateGroups.map(({ date, activities: dayActivities }) => (
                   <section
-                    className={`${styles.kanbanColumn} ${date.iso === todayIso ? styles.kanbanColumnToday : ""}`}
+                    className={`${"kanban__column"} ${date.iso === todayIso ? "kanban__column--today" : ""}`}
                     key={date.iso}
                     aria-labelledby={`kanban-date-${date.iso}`}
                   >
-                    <header className={styles.kanbanColumnHeader}>
-                      <div className={styles.kanbanColumnHeading}>
+                    <header className={"kanban__header"}>
+                      <div className={"kanban__heading"}>
                         <strong id={`kanban-date-${date.iso}`}>{date.day}</strong>
                         <span>{date.date}</span>
                       </div>
-                      <span className={styles.kanbanColumnSummary}>{summaryForDate(date.iso)}</span>
+                      <span className={"kanban__summary"}>{summaryForDate(date.iso)}</span>
                     </header>
-                    <div className={styles.kanbanCards}>
+                    <div className={"kanban__cards"}>
                       {dayActivities.map((activity) => {
                         const category = availableCategories.find((item) => item.id === activity.categoryId)
                           ?? categoryCatalog.find((item) => item.id === activity.categoryId)
@@ -2135,7 +2136,7 @@ export default function Home() {
                         const timeLabel = activityTimeLabel(activity);
                         return (
                           <article
-                            className={styles.kanbanCard}
+                            className={"kanban__card"}
                             key={activity.id}
                             role="group"
                             tabIndex={0}
@@ -2153,19 +2154,19 @@ export default function Home() {
                               }
                             }}
                           >
-                            <div className={styles.activityActions} role="toolbar" aria-label={`Actions for ${activity.title}`}>
+                            <div className={"activity__actions"} role="toolbar" aria-label={`Actions for ${activity.title}`}>
                               {activityActionButtons(activity)}
                             </div>
-                            <strong className={styles.kanbanCardTitle}>{activity.title}</strong>
-                            <div className={styles.kanbanCardMeta}>
-                              <span className={styles.kanbanCardCategory}>{category.name}</span>
+                            <strong className={"kanban__card-title"}>{activity.title}</strong>
+                            <div className={"kanban__card-meta"}>
+                              <span className={"kanban__card-category"}>{category.name}</span>
                               <span>{timeLabel}</span>
                               <span>{activityDurationLabel(activity)}</span>
                             </div>
                           </article>
                         );
                       })}
-                      {dayActivities.length === 0 && <p className={styles.kanbanEmpty}>No activities</p>}
+                      {dayActivities.length === 0 && <p className={"kanban__empty"}>No activities</p>}
                     </div>
                   </section>
                 ))}
@@ -2175,10 +2176,10 @@ export default function Home() {
 
           {viewMode === "table" && (
             <>
-            <div className={styles.tableToolbar} role="search" aria-label="Search and filter activities">
-              <label className={styles.tableSearchField}>
+            <div className={"activity-table__toolbar"} role="search" aria-label="Search and filter activities">
+              <label className={"activity-table__search-field"}>
                 <span>Search</span>
-                <div className={styles.tableSearchInput}>
+                <div className={"activity-table__search-input"}>
                   <Search size={14} aria-hidden="true" />
                   <input
                     type="search"
@@ -2189,21 +2190,21 @@ export default function Home() {
                   />
                 </div>
               </label>
-              <label className={styles.tableFilterField}>
+              <label className={"activity-table__filter-field"}>
                 <span>Category</span>
                 <select aria-label="Filter by category" value={tableCategoryFilter} onChange={(event) => setTableCategoryFilter(event.currentTarget.value)}>
                   <option value="all">All categories</option>
                   {availableCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                 </select>
               </label>
-              <label className={styles.tableFilterField}>
+              <label className={"activity-table__filter-field"}>
                 <span>Priority</span>
                 <select aria-label="Filter by priority" value={tablePriorityFilter} onChange={(event) => setTablePriorityFilter(event.currentTarget.value)}>
                   <option value="all">All priorities</option>
                   {preferences.priorityOptions.map((priority) => <option key={priority} value={priority}>{priority.replace(/[-_]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase())}</option>)}
                 </select>
               </label>
-              <label className={styles.tableFilterField}>
+              <label className={"activity-table__filter-field"}>
                 <span>Task</span>
                 <select aria-label="Filter by task" value={tableTaskFilter} onChange={(event) => setTableTaskFilter(event.currentTarget.value as typeof tableTaskFilter)}>
                   <option value="all">All activities</option>
@@ -2211,11 +2212,11 @@ export default function Home() {
                   <option value="unlinked">No task</option>
                 </select>
               </label>
-              <button className={styles.textButton} type="button" aria-label="Clear table filters" disabled={!tableFiltersActive} onClick={clearTableFilters}>Clear</button>
-              <span className={styles.tableResultCount}>{tableActivities.length} of {tableRows.length}</span>
+              <button className={"button-text"} type="button" aria-label="Clear table filters" disabled={!tableFiltersActive} onClick={clearTableFilters}>Clear</button>
+              <span className={"activity-table__result-count"}>{tableActivities.length} of {tableRows.length}</span>
             </div>
-            <div className={styles.tableScroll} data-view="table">
-              <table className={styles.activityTable} aria-label={`Activities for ${formatMonthLabel(selectedDate)}`}>
+            <div className={"activity-table__scroll"} data-view="table">
+              <table className={"activity-table"} aria-label={`Activities for ${formatMonthLabel(selectedDate)}`}>
                 <thead>
                   <tr>
                     <th scope="col" aria-sort={tableSort.key === "date" ? (tableSort.direction === "asc" ? "ascending" : "descending") : "none"}>{tableSortButton("date")}</th>
@@ -2243,36 +2244,36 @@ export default function Home() {
                           }
                         }}
                       >
-                        <td className={styles.tableDate}><strong>{date.day}</strong><br /><span>{date.date}</span></td>
+                        <td className={"activity-table__date"}><strong>{date.day}</strong><br /><span>{date.date}</span></td>
                         <td>
-                          <div className={styles.tableActivity}>
+                          <div className={"activity-table__activity"}>
                             <strong>{activity.title}</strong>
                             {activity.tags.length > 0 && <span>{activity.tags.map((tag) => `#${tag}`).join(" ")}</span>}
                           </div>
                         </td>
                         <td>
                           <span
-                            className={styles.tableCategory}
+                            className={"activity-table__category"}
                             style={{
                               "--activity-color": activity.colorToken
                                 ? `var(--activity-color-${activity.colorToken})`
                                 : `var(--activity-color-${colorTokenForCategory(preferences, category)})`,
                             } as TimelineStyle}
                           >
-                            <span className={styles.tableColorDot} aria-hidden="true" />
+                            <span className={"activity-table__color-dot"} aria-hidden="true" />
                             {category.name}
                           </span>
                         </td>
-                        <td className={styles.tableTime}>{timeLabel}</td>
-                        <td className={styles.tableMuted}>{activityDurationLabel(activity)}</td>
-                        <td className={styles.tableTask}>{linkedTask?.title ?? "—"}</td>
-                        <td className={styles.tablePriority}>{priority}</td>
+                        <td className={"activity-table__time"} data-activity-time={activity.id}>{timeLabel}</td>
+                        <td className={"activity-table__muted"}>{activityDurationLabel(activity)}</td>
+                        <td className={"activity-table__task"}>{linkedTask?.title ?? "—"}</td>
+                        <td className={"activity-table__priority"}>{priority}</td>
                       </tr>
                     );
                   })}
                   {tableActivities.length === 0 && (
                     <tr>
-                      <td className={styles.tableEmpty} colSpan={7}>No activities match the current search and filters.</td>
+                      <td className={"activity-table__empty"} colSpan={7}>No activities match the current search and filters.</td>
                     </tr>
                   )}
                 </tbody>
@@ -2283,33 +2284,33 @@ export default function Home() {
         </section>
 
         <aside
-          className={`${styles.taskDrawer} ${tasksOpen ? styles.taskDrawerOpen : ""}`}
+          className={`${"task-drawer"} ${tasksOpen ? "task-drawer--open" : ""}`}
           id="task-drawer"
           aria-label="Task manager"
           aria-hidden={!tasksOpen}
         >
-          <div className={styles.taskDrawerHeader}>
+          <div className={"task-drawer__header"}>
             <div>
-              <p className={styles.eyebrow}>Work list</p>
-              <h2 className={styles.taskDrawerTitle}>Tasks</h2>
-              <p className={styles.taskDrawerDescription}>Keep future work close to the time you record.</p>
+              <p className={"app__eyebrow"}>Work list</p>
+              <h2 className={"task-drawer__title"}>Tasks</h2>
+              <p className={"task-drawer__description"}>Keep future work close to the time you record.</p>
             </div>
-            <button className={styles.iconButton} type="button" aria-label="Close task manager" onClick={() => setTasksOpen(false)}>×</button>
+            <button className={"button-icon"} type="button" aria-label="Close task manager" onClick={() => setTasksOpen(false)}>×</button>
           </div>
 
           {taskDraft ? (
             <form
-              className={styles.taskForm}
+              className={"task-form"}
               onSubmit={(event) => {
                 event.preventDefault();
                 saveTaskDraft();
               }}
             >
-              <div className={styles.taskFormHeading}>
+              <div className={"task-form__heading"}>
                 <strong>{taskDraft.id ? "Edit task" : "Add task"}</strong>
-                <button className={styles.textButton} type="button" onClick={closeTaskEditor}>Cancel</button>
+                <button className={"button-text"} type="button" onClick={closeTaskEditor}>Cancel</button>
               </div>
-              <label className={styles.field}>
+              <label className={"form-field"}>
                 <span>Title</span>
                 <input
                   ref={taskTitleInputRef}
@@ -2322,7 +2323,7 @@ export default function Home() {
                   autoComplete="off"
                 />
               </label>
-              <label className={styles.field}>
+              <label className={"form-field"}>
                 <span>Due date <small>optional</small></span>
                 <input
                   type="date"
@@ -2330,7 +2331,7 @@ export default function Home() {
                   onChange={(event) => setTaskDraft((current) => current ? { ...current, dueDate: event.target.value } : current)}
                 />
               </label>
-              <label className={styles.field}>
+              <label className={"form-field"}>
                 <span>Status</span>
                 <select
                   value={taskDraft.status}
@@ -2339,7 +2340,7 @@ export default function Home() {
                   {taskStatusOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
                 </select>
               </label>
-              <label className={styles.field}>
+              <label className={"form-field"}>
                 <span>Description <small>optional</small></span>
                 <textarea
                   value={taskDraft.description}
@@ -2348,90 +2349,90 @@ export default function Home() {
                   placeholder="A little context for later."
                 />
               </label>
-              {taskError && <p className={styles.formError} role="alert">{taskError}</p>}
-              <button className={styles.primaryButton} type="submit">{taskDraft.id ? "Save task" : "Add task"}</button>
+              {taskError && <p className={"form__error"} role="alert">{taskError}</p>}
+              <button className={"button-primary"} type="submit">{taskDraft.id ? "Save task" : "Add task"}</button>
             </form>
           ) : (
             <>
-              <div className={styles.taskDrawerActions}>
-                <button className={styles.primaryButton} type="button" onClick={openNewTask}><Plus size={14} /> Add task</button>
-                <label className={styles.taskSearch}>
-                  <span className={styles.srOnly}>Search tasks</span>
+              <div className={"task-drawer__actions"}>
+                <button className={"button-primary"} type="button" onClick={openNewTask}><Plus size={14} /> Add task</button>
+                <label className={"task-drawer__search"}>
+                  <span className={"sr-only"}>Search tasks</span>
                   <Search size={14} aria-hidden="true" />
                   <input value={taskQuery} onChange={(event) => setTaskQuery(event.target.value)} placeholder="Search tasks" />
                 </label>
               </div>
-              <label className={styles.taskFilter}>
+              <label className={"task-drawer__filter"}>
                 <span>Status</span>
                 <select value={taskStatusFilter} onChange={(event) => setTaskStatusFilter(event.target.value as TaskStatus | "all")}>
                   <option value="all">All statuses</option>
                   {taskStatusOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
                 </select>
               </label>
-              <div className={styles.taskList}>
+              <div className={"task-drawer__list"}>
                 {visibleTasks.map((task) => {
                   const overdue = task.dueDate !== null && task.dueDate < todayIso && task.status !== "closed" && task.status !== "fixed";
                   return (
-                    <article className={styles.taskCard} key={task.id}>
-                      <div className={styles.taskCardHeader}>
-                        <button className={styles.taskTitleButton} type="button" onClick={() => openTaskEditor(task)}>{task.title}</button>
-                        <span className={`${styles.taskStatusBadge} ${styles[`taskStatus${task.status.replace(/(^|-)(\w)/g, (_, separator, character) => character.toUpperCase())}`]}`}>{taskStatusLabel(task.status)}</span>
+                    <article className={"task-card"} key={task.id}>
+                      <div className={"task-card__header"}>
+                        <button className={"task-card__title"} type="button" onClick={() => openTaskEditor(task)}>{task.title}</button>
+                        <span className={`${"task-card__status"} ${`task-card__status--${task.status}`}`}>{taskStatusLabel(task.status)}</span>
                       </div>
-                      {task.description && <p className={styles.taskDescription}>{task.description}</p>}
-                      <div className={`${styles.taskMeta} ${overdue ? styles.taskOverdue : ""}`}>
+                      {task.description && <p className={"task-card__description"}>{task.description}</p>}
+                      <div className={`${"task-card__meta"} ${overdue ? "task-card__meta--overdue" : ""}`}>
                         <span>{task.dueDate ? (overdue ? `Overdue · ${formatDateLabel(task.dueDate)}` : `Due ${formatDateLabel(task.dueDate)}`) : "No due date"}</span>
                       </div>
-                      <div className={styles.taskCardActions}>
+                      <div className={"task-card__actions"}>
                         <select aria-label={`Status for ${task.title}`} value={task.status} onChange={(event) => updateTaskStatus(task, event.target.value as TaskStatus)}>
                           {taskStatusOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
                         </select>
-                        <button className={styles.textButton} type="button" onClick={() => logActivityForTask(task)}>Log activity</button>
-                        <button className={`${styles.textButton} ${styles.dangerButton}`} type="button" onClick={() => deleteTask(task)}>Delete</button>
+                        <button className={"button-text"} type="button" onClick={() => logActivityForTask(task)}>Log activity</button>
+                        <button className={`${"button-text"} ${"button-text--danger"}`} type="button" onClick={() => deleteTask(task)}>Delete</button>
                       </div>
                     </article>
                   );
                 })}
-                {visibleTasks.length === 0 && <p className={styles.taskEmpty}>{tasks.length === 0 ? "No tasks yet. Add one for future work." : "No tasks match those filters."}</p>}
+                {visibleTasks.length === 0 && <p className={"task-drawer__empty"}>{tasks.length === 0 ? "No tasks yet. Add one for future work." : "No tasks match those filters."}</p>}
               </div>
             </>
           )}
         </aside>
 
         {undoNotice && (
-          <div className={styles.undoToast} role="alert">
+          <div className={"toast"} role="alert">
             <span>{undoNotice}</span>
-            <button className={styles.textButton} type="button" onClick={undo}>Undo</button>
+            <button className={"button-text"} type="button" onClick={undo}>Undo</button>
           </div>
         )}
-        <div className={styles.footerNote}>
+        <div className={"form__footer-note"}>
           <span>Drag across an empty row to paint an activity. Gaps are part of the record.</span>
           <span><kbd>N</kbd> quick entry · <kbd>⌘/Ctrl Z</kbd> undo</span>
         </div>
 
         <dialog
           ref={recoveryDialogRef}
-          className={styles.quickEntryDialog}
+          className={"quick-entry"}
           aria-labelledby="timer-recovery-title"
           onCancel={(event) => event.preventDefault()}
         >
           {timerRecovery && (
-            <div className={styles.quickEntryForm}>
-              <div className={styles.detailsHeader}>
+            <div className={"quick-entry__form"}>
+              <div className={"details-dialog__header"}>
                 <div>
-                  <p className={styles.eyebrow}>Timer recovery</p>
-                  <h2 className={styles.detailsTitle} id="timer-recovery-title">A timer crossed a day boundary.</h2>
+                  <p className={"app__eyebrow"}>Timer recovery</p>
+                  <h2 className={"details-dialog__title"} id="timer-recovery-title">A timer crossed a day boundary.</h2>
                 </div>
               </div>
-              <div className={styles.detailsFields}>
-                <p className={styles.detailsStatus}>
+              <div className={"details-dialog__fields"}>
+                <p className={"details-dialog__status"}>
                   “{timerRecovery.activity.title}” was left running on {formatDateLabel(timerRecovery.startDate)}.
                   Work is never inferred while the app was closed.
                 </p>
-                <p className={styles.detailsStatus}>Choose whether to stop it at the original day boundary or continue it through each crossed day.</p>
+                <p className={"details-dialog__status"}>Choose whether to stop it at the original day boundary or continue it through each crossed day.</p>
               </div>
-              <div className={styles.detailsFooter}>
-                <button className={styles.textButton} type="button" onClick={() => resolveTimerRecovery(false)}>Stop at midnight</button>
-                <button className={styles.primaryButton} type="button" onClick={() => resolveTimerRecovery(true)}>Continue to today</button>
+              <div className={"details-dialog__footer"}>
+                <button className={"button-text"} type="button" onClick={() => resolveTimerRecovery(false)}>Stop at midnight</button>
+                <button className={"button-primary"} type="button" onClick={() => resolveTimerRecovery(true)}>Continue to today</button>
               </div>
             </div>
           )}
@@ -2439,7 +2440,7 @@ export default function Home() {
 
         <dialog
           ref={quickEntryDialogRef}
-          className={styles.quickEntryDialog}
+          className={"quick-entry"}
           aria-labelledby="quick-entry-title"
           onClose={closeQuickEntry}
           onCancel={(event) => {
@@ -2448,23 +2449,23 @@ export default function Home() {
           }}
         >
           <form
-            className={styles.quickEntryForm}
+            className={"quick-entry__form"}
             onSubmit={(event) => {
               event.preventDefault();
               commitQuickEntry();
             }}
           >
-            <div className={styles.detailsHeader}>
+            <div className={"details-dialog__header"}>
               <div>
-                <p className={styles.eyebrow}>Quick entry</p>
-                <h2 className={styles.detailsTitle} id="quick-entry-title">Capture the block.</h2>
+                <p className={"app__eyebrow"}>Quick entry</p>
+                <h2 className={"details-dialog__title"} id="quick-entry-title">Capture the block.</h2>
               </div>
-              <button className={styles.iconButton} type="button" aria-label="Close quick entry" onClick={closeQuickEntry}>×</button>
+              <button className={"button-icon"} type="button" aria-label="Close quick entry" onClick={closeQuickEntry}>×</button>
             </div>
 
             {quickEntryDraft && (
-              <div className={styles.detailsFields}>
-                <label className={styles.field}>
+              <div className={"details-dialog__fields"}>
+                <label className={"form-field"}>
                   <span>Title</span>
                   <input
                     ref={quickEntryTitleRef}
@@ -2482,8 +2483,8 @@ export default function Home() {
                   </datalist>
                 </label>
 
-                <div className={styles.fieldRow}>
-                  <label className={styles.field}>
+                <div className={"form-field__row"}>
+                  <label className={"form-field"}>
                     <span>Date</span>
                     <input
                       type="date"
@@ -2491,7 +2492,7 @@ export default function Home() {
                       onChange={(event) => setQuickEntryDraft((current) => current ? { ...current, date: event.target.value } : current)}
                     />
                   </label>
-                  <label className={styles.field}>
+                  <label className={"form-field"}>
                     <span>Start</span>
                     <input
                       type="time"
@@ -2501,7 +2502,7 @@ export default function Home() {
                   </label>
                 </div>
 
-                <label className={styles.field}>
+                <label className={"form-field"}>
                   <span>Duration</span>
                   <input
                     value={quickEntryDraft.duration}
@@ -2533,12 +2534,12 @@ export default function Home() {
                 )}
 
                 {activities.length > 0 && (
-                  <div className={styles.recentEntries}>
-                    <span className={styles.fieldLabel}>Recent activities</span>
-                    <div className={styles.recentEntryList}>
+                  <div className={"recent-entries"}>
+                    <span className={"form-field__label"}>Recent activities</span>
+                    <div className={"recent-entries__list"}>
                       {[...activities].reverse().filter((activity, index, items) => items.findIndex((item) => item.title === activity.title) === index).slice(0, 4).map((activity) => (
                         <button
-                          className={styles.recentEntry}
+                          className={"recent-entries__item"}
                           type="button"
                           key={activity.id}
                           onClick={() => setQuickEntryDraft((current) => current ? { ...current, title: activity.title, categoryId: activity.categoryId } : current)}
@@ -2552,12 +2553,12 @@ export default function Home() {
               </div>
             )}
 
-            {quickEntryError && <p className={styles.formError} role="alert">{quickEntryError}</p>}
-            <div className={styles.detailsFooter}>
-              <p className={styles.detailsStatus}>Press Enter to create</p>
-              <div className={styles.toolbarActions}>
-                <button className={styles.textButton} type="button" onClick={closeQuickEntry}>Cancel</button>
-                <button className={styles.primaryButton} type="submit">Create activity</button>
+            {quickEntryError && <p className={"form__error"} role="alert">{quickEntryError}</p>}
+            <div className={"details-dialog__footer"}>
+              <p className={"details-dialog__status"}>Press Enter to create</p>
+              <div className={"toolbar__actions"}>
+                <button className={"button-text"} type="button" onClick={closeQuickEntry}>Cancel</button>
+                <button className={"button-primary"} type="submit">Create activity</button>
               </div>
             </div>
           </form>
@@ -2565,7 +2566,7 @@ export default function Home() {
 
         <dialog
           ref={detailsDialogRef}
-          className={styles.detailsDialog}
+          className={"details-dialog"}
           aria-labelledby="activity-details-title"
           onClose={resetActivityDetails}
           onCancel={(event) => {
@@ -2574,25 +2575,25 @@ export default function Home() {
           }}
         >
           <form
-            className={styles.detailsForm}
+            className={"details-dialog__form"}
             onSubmit={(event) => {
               event.preventDefault();
               if (commitActivityDraft()) closeActivityDetails();
             }}
           >
-            <div className={styles.detailsHeader}>
+            <div className={"details-dialog__header"}>
               <div>
-                <p className={styles.eyebrow}>Activity details</p>
-                <h2 className={styles.detailsTitle} id="activity-details-title">
+                <p className={"app__eyebrow"}>Activity details</p>
+                <h2 className={"details-dialog__title"} id="activity-details-title">
                   {editingActivity?.title || "New activity"}
                 </h2>
               </div>
-              <button className={styles.iconButton} type="button" aria-label="Close activity details" onClick={closeActivityDetails}>×</button>
+              <button className={"button-icon"} type="button" aria-label="Close activity details" onClick={closeActivityDetails}>×</button>
             </div>
 
             {activityDraft && (
-              <div className={styles.detailsFields}>
-                <label className={styles.field}>
+              <div className={"details-dialog__fields"}>
+                <label className={"form-field"}>
                   <span>Title</span>
                   <input
                     ref={titleInputRef}
@@ -2603,7 +2604,7 @@ export default function Home() {
                   />
                 </label>
 
-                <label className={styles.field}>
+                <label className={"form-field"}>
                   <span>Date</span>
                   <input
                     type="date"
@@ -2612,8 +2613,8 @@ export default function Home() {
                   />
                 </label>
 
-                <div className={styles.fieldRow}>
-                  <label className={styles.field}>
+                <div className={"form-field__row"}>
+                  <label className={"form-field"}>
                     <span>Start</span>
                     <input
                       type="time"
@@ -2621,7 +2622,7 @@ export default function Home() {
                       onChange={(event) => updateActivityDraft("start", event.target.value)}
                     />
                   </label>
-                  <label className={styles.field}>
+                  <label className={"form-field"}>
                     <span>End</span>
                     <input
                       type="time"
@@ -2657,7 +2658,7 @@ export default function Home() {
                   "activity-color",
                 )}
 
-                <label className={styles.field}>
+                <label className={"form-field"}>
                   <span>Notes</span>
                   <textarea
                     value={activityDraft.notes}
@@ -2667,7 +2668,7 @@ export default function Home() {
                   />
                 </label>
 
-                <label className={styles.field}>
+                <label className={"form-field"}>
                   <span>Tags <small>comma-separated</small></span>
                   <input
                     value={activityDraft.tags}
@@ -2678,13 +2679,13 @@ export default function Home() {
               </div>
             )}
 
-            <div className={styles.detailsFooter}>
-              <p className={styles.detailsStatus} aria-live="polite">
+            <div className={"details-dialog__footer"}>
+              <p className={"details-dialog__status"} aria-live="polite">
                 {draftError ?? (draftStatus === "saved" ? "Saved" : "Changes save automatically.")}
               </p>
-              <div className={styles.toolbarActions}>
+              <div className={"toolbar__actions"}>
                 <button
-                  className={`${styles.textButton} ${styles.dangerButton}`}
+                  className={`${"button-text"} ${"button-text--danger"}`}
                   type="button"
                   onClick={() => {
                     if (editingActivity) deleteActivity(editingActivity);
@@ -2692,7 +2693,7 @@ export default function Home() {
                 >
                   Delete activity
                 </button>
-                <button className={styles.textButton} type="submit">Done</button>
+                <button className={"button-text"} type="submit">Done</button>
               </div>
             </div>
           </form>

@@ -1,0 +1,125 @@
+@use "../tokens" as tokens;
+
+@media (max-width: tokens.$breakpoint-tablet) {
+  .app {
+    padding: max(16px, env(safe-area-inset-top)) 14px calc(32px + env(safe-area-inset-bottom));
+
+    &__shell {
+      max-width: 100%;
+    }
+
+    &__header {
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+
+    &__header-actions {
+      gap: 5px;
+
+      .button-primary {
+        width: 44px;
+        padding: 0;
+        font-size: 0;
+
+        svg {
+          margin: 0;
+        }
+      }
+    }
+
+    &__intro {
+      display: block;
+      padding: 34px 0 24px;
+    }
+
+    &__subtitle {
+      margin-top: 16px;
+    }
+  }
+
+  .brand {
+    min-width: 0;
+    font-size: 17px;
+
+    &__mark {
+      width: 26px;
+      height: 26px;
+    }
+  }
+
+  .navigation {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: space-between;
+    margin-bottom: 12px;
+
+    &__link {
+      flex: 1;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 7px;
+
+      span {
+        display: none;
+      }
+    }
+  }
+
+  .button-icon {
+    width: 44px;
+    min-height: 44px;
+  }
+
+  .timeline {
+    --timeline-toolbar-height: 124px;
+
+    &__toolbar {
+      align-items: flex-start;
+      flex-direction: column;
+      padding: 14px;
+    }
+  }
+
+  .toolbar__actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .details-dialog {
+    width: 100%;
+    height: auto;
+    max-height: 92vh;
+    margin: auto 0 0;
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+    border-radius: 16px 16px 0 0;
+
+    &__form {
+      min-height: auto;
+      padding: 22px 18px calc(18px + env(safe-area-inset-bottom));
+    }
+  }
+}
+
+@media (min-width: tokens.$breakpoint-tablet + 1px) and (max-width: tokens.$breakpoint-desktop - 1px) {
+  .app {
+    padding: 22px 24px 40px;
+
+    &__shell {
+      max-width: 100%;
+    }
+
+    &__header {
+      gap: 14px;
+    }
+  }
+
+  .navigation__link {
+    padding: 0 10px;
+  }
+
+  .timeline__toolbar {
+    gap: 12px;
+  }
+}

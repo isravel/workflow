@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { WifiOff } from "lucide-react";
 import type { ActivitySaveResult } from "@/repositories/activityRepository";
-import styles from "../styles/pwa-status.module.scss";
 
 export function PwaClient() {
   const [offline, setOffline] = useState<boolean | null>(null);
@@ -37,7 +36,7 @@ export function PwaClient() {
   if (offline !== true && !localOnly) return null;
 
   return (
-    <div className={styles.status} aria-label="Connection status" aria-live="polite">
+    <div className={"pwa-status"} aria-label="Connection status" aria-live="polite">
       <WifiOff size={14} aria-hidden="true" />
       <span>{offline === true ? "Offline — changes save on this device." : "Saved on this device — remote sync is unavailable."}</span>
     </div>

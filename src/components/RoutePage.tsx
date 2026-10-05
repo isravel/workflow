@@ -22,7 +22,6 @@ import {
 import { addDays, dateFromTimestamp, defaultClockTimestamp, runtimeClock } from "@/domain/time";
 import type { Activity, ActivityPriority, Category, Task } from "@/domain/types";
 import { createJournalBackup, importJournalBackup, loadJournal } from "@/repositories/activityRepository";
-import styles from "../styles/route-page.module.scss";
 
 type RoutePageProps = {
   eyebrow: string;
@@ -347,77 +346,77 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
   const isSettings = eyebrow === "Make it yours";
 
   return (
-    <div className={styles.page}>
-      <main className={styles.shell}>
-        <header className={styles.topline}>
-          <Link className={styles.brand} href="/"><span className={styles.brandMark}>W</span>WorkFlow Journal</Link>
-          <Link className={styles.back} href="/"><ArrowLeft size={15} /> Timeline</Link>
+    <div className={"route"}>
+      <main className={"route__shell"}>
+        <header className={"route__topline"}>
+          <Link className={"route__brand"} href="/"><span className={"route__brand-mark"}>W</span>WorkFlow Journal</Link>
+          <Link className={"route__back"} href="/"><ArrowLeft size={15} /> Timeline</Link>
         </header>
-        <section className={styles.content} aria-labelledby="route-title">
-          <p className={styles.eyebrow}>{eyebrow}</p>
-          <h1 className={styles.title} id="route-title">{title}</h1>
-          <p className={styles.description}>{description}</p>
+        <section className={"route__content"} aria-labelledby="route-title">
+          <p className={"route__eyebrow"}>{eyebrow}</p>
+          <h1 className={"route__title"} id="route-title">{title}</h1>
+          <p className={"route__description"}>{description}</p>
 
           {isSearch && (
-            <div className={styles.searchPanel}>
-              <label className={styles.label} htmlFor="activity-search">Search activities</label>
-              <div className={styles.searchField}><Search size={16} /><input id="activity-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Try “research”, “prototype”, or a date" autoFocus /></div>
-              {loadError && <p className={styles.errorResult} role="alert">{loadError}</p>}
-              {activities === null && !loadError && <p className={styles.emptyResult}>Loading activity history…</p>}
-              <div className={styles.resultList}>
+            <div className={"search"}>
+              <label className={"search__label"} htmlFor="activity-search">Search activities</label>
+              <div className={"search__field"}><Search size={16} /><input id="activity-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Try “research”, “prototype”, or a date" autoFocus /></div>
+              {loadError && <p className={"route__error"} role="alert">{loadError}</p>}
+              {activities === null && !loadError && <p className={"route__empty"}>Loading activity history…</p>}
+              <div className={"search__results"}>
                 {activities !== null && !loadError && matchingActivities.map((activity) => {
                   const category = configuredCategories.find((item) => item.id === activity.categoryId) ?? categories[0];
                   return (
-                    <Link className={styles.result} href={`/?date=${dateForActivity(activity, preferences.timezone)}`} key={activity.id}>
+                    <Link className={"search__result"} href={`/?date=${dateForActivity(activity, preferences.timezone)}`} key={activity.id}>
                       <div><strong>{activity.title}</strong><span>{category.name} · {formatDuration(activity.startAt, activity.endAt, clock)}{activity.priority && activity.priority !== "normal" ? ` · ${activity.priority} priority` : ""}</span></div>
                       <time>{new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: preferences.timezone }).format(new Date(activity.startAt))}</time>
                     </Link>
                   );
                 })}
-                {activities !== null && !loadError && matchingActivities.length === 0 && <p className={styles.emptyResult}>No activities match those filters.</p>}
+                {activities !== null && !loadError && matchingActivities.length === 0 && <p className={"route__empty"}>No activities match those filters.</p>}
               </div>
             </div>
           )}
 
           {isStatistics && (
-            <div className={styles.statsPanel}>
-              {loadError && <p className={styles.errorResult} role="alert">{loadError}</p>}
-              {activities === null && !loadError && <p className={styles.emptyResult}>Loading activity history…</p>}
-              <div className={styles.statGrid}>
-                <div className={styles.stat}><span>Tracked time</span><strong>{Math.floor(totals.tracked / 60)}h {totals.tracked % 60}m</strong><small>sum of recorded work</small></div>
-                <div className={styles.stat}><span>Deep work</span><strong>{Math.floor(totals.focus / 60)}h {totals.focus % 60}m</strong><small>category kind: focus</small></div>
-                <div className={styles.stat}><span>Meetings</span><strong>{Math.floor(totals.meetings / 60)}h {totals.meetings % 60}m</strong><small>category kind: meeting</small></div>
-                <div className={styles.stat}><span>Last 7 days</span><strong>{Math.floor(weeklyMinutes / 60)}h {weeklyMinutes % 60}m</strong><small>calendar-week window</small></div>
+            <div className={"statistics"}>
+              {loadError && <p className={"route__error"} role="alert">{loadError}</p>}
+              {activities === null && !loadError && <p className={"route__empty"}>Loading activity history…</p>}
+              <div className={"statistics__grid"}>
+                <div className={"statistics__stat"}><span>Tracked time</span><strong>{Math.floor(totals.tracked / 60)}h {totals.tracked % 60}m</strong><small>sum of recorded work</small></div>
+                <div className={"statistics__stat"}><span>Deep work</span><strong>{Math.floor(totals.focus / 60)}h {totals.focus % 60}m</strong><small>category kind: focus</small></div>
+                <div className={"statistics__stat"}><span>Meetings</span><strong>{Math.floor(totals.meetings / 60)}h {totals.meetings % 60}m</strong><small>category kind: meeting</small></div>
+                <div className={"statistics__stat"}><span>Last 7 days</span><strong>{Math.floor(weeklyMinutes / 60)}h {weeklyMinutes % 60}m</strong><small>calendar-week window</small></div>
               </div>
-              <div className={styles.categoryList} aria-label="Category breakdown">
+              <div className={"category-breakdown"} aria-label="Category breakdown">
                 {categoryTotals.map(({ category, minutes }) => (
-                  <div className={styles.categoryRow} key={category.id}>
+                  <div className={"category-breakdown__row"} key={category.id}>
                     <span>{category.name}</span>
-                    <div className={styles.categoryBar}><i style={{ width: `${Math.min(100, (minutes / Math.max(totals.tracked, 1)) * 100)}%` }} /></div>
+                    <div className={"category-breakdown__bar"}><i style={{ width: `${Math.min(100, (minutes / Math.max(totals.tracked, 1)) * 100)}%` }} /></div>
                     <strong>{Math.floor(minutes / 60)}h {minutes % 60}m</strong>
                   </div>
                 ))}
               </div>
-              <div className={styles.dailyList} aria-label="Recent daily totals">
+              <div className={"statistics__daily"} aria-label="Recent daily totals">
                 <h2>Recent days</h2>
                 {dailyTotals.map(([date, minutes]) => (
-                  <Link className={styles.dailyRow} href={`/?date=${date}`} key={date}>
+                  <Link className={"statistics__daily-row"} href={`/?date=${date}`} key={date}>
                     <span>{date}</span>
                     <strong>{Math.floor(minutes / 60)}h {minutes % 60}m</strong>
                   </Link>
                 ))}
-                {dailyTotals.length === 0 && <p className={styles.emptyResult}>No recorded days yet.</p>}
+                {dailyTotals.length === 0 && <p className={"route__empty"}>No recorded days yet.</p>}
               </div>
             </div>
           )}
 
           {isSettings && (
-            <div className={styles.settingsPanel}>
-              <div className={styles.settingsLayout}>
-                <div className={styles.settingsTabs} role="tablist" aria-label="Settings sections">
+            <div className={"settings"}>
+              <div className={"settings__layout"}>
+                <div className={"settings__tabs"} role="tablist" aria-label="Settings sections">
                   {settingsTabs.map((tab) => (
                     <button
-                      className={`${styles.settingsTab} ${settingsTab === tab.id ? styles.settingsTabActive : ""}`}
+                      className={`${"settings__tab"} ${settingsTab === tab.id ? "settings__tab--active" : ""}`}
                       type="button"
                       role="tab"
                       id={`settings-tab-${tab.id}`}
@@ -431,103 +430,103 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
                   ))}
                 </div>
 
-                <div className={styles.settingsTabContent}>
+                <div className={"settings__content"}>
                 {settingsTab === "timeline" && (
-                <section className={styles.settingsTabPanel} id="settings-panel-timeline" role="tabpanel" aria-labelledby="settings-tab-timeline">
-                  <div className={styles.setting}>
+                <section className={"settings__panel"} id="settings-panel-timeline" role="tabpanel" aria-labelledby="settings-tab-timeline">
+                  <div className={"settings__row"}>
                     <div><strong>Visible day</strong><span>Keep the timeline focused on your working hours.</span></div>
-                    <div className={styles.fieldPair}>
+                    <div className={"settings__field-pair"}>
                       <label>From<select value={preferences.startHour} onChange={(event) => updatePreferences({ startHour: event.target.value })}><option>07:00</option><option>08:00</option><option>09:00</option></select></label>
                       <label>To<select value={preferences.endHour} onChange={(event) => updatePreferences({ endHour: event.target.value })}><option>18:00</option><option>20:00</option><option>22:00</option></select></label>
                     </div>
                   </div>
-                  <div className={styles.setting}>
+                  <div className={"settings__row"}>
                     <div><strong>Snap interval</strong><span>Editing increments stay independent from zoom.</span></div>
-                    <select aria-label="Snap interval" className={styles.select} value={preferences.snapMinutes} onChange={(event) => updatePreferences({ snapMinutes: Number(event.target.value) as TimelinePreferences["snapMinutes"] })}><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option></select>
+                    <select aria-label="Snap interval" className={"settings__select"} value={preferences.snapMinutes} onChange={(event) => updatePreferences({ snapMinutes: Number(event.target.value) as TimelinePreferences["snapMinutes"] })}><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option></select>
                   </div>
-                  <div className={styles.setting}>
+                  <div className={"settings__row"}>
                     <div><strong>Timezone</strong><span>Wall-clock dates and activity times use this zone.</span></div>
-                    <select aria-label="Timezone" className={styles.select} value={preferences.timezone} onChange={(event) => updatePreferences({ timezone: event.target.value as TimelinePreferences["timezone"] })}>{timezoneOptions.map((timezoneOption) => <option key={timezoneOption} value={timezoneOption}>{timezoneOption}</option>)}</select>
+                    <select aria-label="Timezone" className={"settings__select"} value={preferences.timezone} onChange={(event) => updatePreferences({ timezone: event.target.value as TimelinePreferences["timezone"] })}>{timezoneOptions.map((timezoneOption) => <option key={timezoneOption} value={timezoneOption}>{timezoneOption}</option>)}</select>
                   </div>
-                  <p className={styles.settingFootnote}>Timeline preview: {preferences.startHour}–{preferences.endHour} · snap to {preferences.snapMinutes} minutes · {preferences.timezone}.</p>
+                  <p className={"settings__footnote"}>Timeline preview: {preferences.startHour}–{preferences.endHour} · snap to {preferences.snapMinutes} minutes · {preferences.timezone}.</p>
                 </section>
                 )}
 
                 {settingsTab === "rest-days" && (
-                <section className={styles.settingsTabPanel} id="settings-panel-rest-days" role="tabpanel" aria-labelledby="settings-tab-rest-days">
-                  <div className={styles.setting}>
+                <section className={"settings__panel"} id="settings-panel-rest-days" role="tabpanel" aria-labelledby="settings-tab-rest-days">
+                  <div className={"settings__row"}>
                     <div><strong>Rest-day rows</strong><span>Show or hide weekly holidays, public holidays, and leave rows in the timeline.</span></div>
-                    <button className={styles.toggle} type="button" onClick={toggleRestDays} aria-pressed={showRestDays}>{showRestDays ? "Shown" : "Hidden"}</button>
+                    <button className={"settings__toggle"} type="button" onClick={toggleRestDays} aria-pressed={showRestDays} data-setting="rest-days-visibility" data-setting-scope="global">{showRestDays ? "Shown" : "Hidden"}</button>
                   </div>
-                  <div className={`${styles.setting} ${styles.restDaysSetting}`}>
+                  <div className={`${"settings__row"} ${"rest-days__section"}`}>
                     <div><strong>Weekly holidays</strong><span>Choose the days that repeat every week.</span></div>
-                    <div className={styles.weekdayOptions}>
+                    <div className={"rest-days__weekdays"}>
                       {weeklyHolidayOptions.map((day) => (
-                        <label className={styles.weekdayOption} key={day.value}>
+                        <label className={"rest-days__weekday"} key={day.value}>
                           <input type="checkbox" checked={preferences.weeklyHolidayDays.includes(day.value)} onChange={() => toggleWeeklyHoliday(day.value)} />
                           <span>{day.label}</span>
                         </label>
                       ))}
                     </div>
                   </div>
-                  <div className={`${styles.setting} ${styles.restDaysSetting}`}>
+                  <div className={`${"settings__row"} ${"rest-days__section"}`}>
                     <div><strong>Date marker</strong><span>Mark one whole day as a public holiday or leave.</span></div>
-                    <div className={styles.restDayEditor}>
-                      <label className={styles.restDaysDateField}><span>Date</span><input type="date" aria-label="Date to mark" value={restDayDate} onChange={(event) => setRestDayDate(event.currentTarget.value)} /></label>
-                      <span className={styles.restDayCurrentStatus}>{selectedRestDayStatus ? restDayLabel(selectedRestDayStatus) : "Working day"}</span>
-                      <div className={styles.restDayActions}>
-                        <button className={`${styles.restDayButton} ${selectedRestDayStatus === "public-holiday" ? styles.restDayButtonSelected : ""}`} type="button" aria-pressed={selectedRestDayStatus === "public-holiday"} onClick={() => setSelectedDayStatus("public-holiday")}>Public holiday</button>
-                        <button className={`${styles.restDayButton} ${selectedRestDayStatus === "leave" ? styles.restDayButtonSelected : ""}`} type="button" aria-pressed={selectedRestDayStatus === "leave"} onClick={() => setSelectedDayStatus("leave")}>Leave</button>
+                    <div className={"rest-days__editor"}>
+                      <label className={"rest-days__date"}><span>Date</span><input type="date" aria-label="Date to mark" value={restDayDate} onChange={(event) => setRestDayDate(event.currentTarget.value)} /></label>
+                      <span className={"rest-days__status"}>{selectedRestDayStatus ? restDayLabel(selectedRestDayStatus) : "Working day"}</span>
+                      <div className={"rest-days__actions"}>
+                        <button className={`${"rest-days__button"} ${selectedRestDayStatus === "public-holiday" ? "rest-days__button--selected" : ""}`} type="button" aria-pressed={selectedRestDayStatus === "public-holiday"} onClick={() => setSelectedDayStatus("public-holiday")}>Public holiday</button>
+                        <button className={`${"rest-days__button"} ${selectedRestDayStatus === "leave" ? "rest-days__button--selected" : ""}`} type="button" aria-pressed={selectedRestDayStatus === "leave"} onClick={() => setSelectedDayStatus("leave")}>Leave</button>
                       </div>
-                      {selectedRestDayStatus && <button className={styles.clearRestDayButton} type="button" onClick={() => setSelectedDayStatus(null)}>Clear date marker</button>}
+                      {selectedRestDayStatus && <button className={"rest-days__clear"} type="button" onClick={() => setSelectedDayStatus(null)}>Clear date marker</button>}
                     </div>
                   </div>
                 </section>
                 )}
 
                 {settingsTab === "categories" && (
-                <section className={styles.settingsTabPanel} id="settings-panel-categories" role="tabpanel" aria-labelledby="settings-tab-categories">
-                  <div className={`${styles.setting} ${styles.managementSetting}`}>
+                <section className={"settings__panel"} id="settings-panel-categories" role="tabpanel" aria-labelledby="settings-tab-categories">
+                  <div className={`${"settings__row"} ${"settings__management"}`}>
                     <div><strong>Manage categories</strong><span>Add categories with a color, or remove categories from future activity forms.</span></div>
-                    <div className={styles.managementPanel}>
-                      <form className={styles.managementForm} onSubmit={addCategory}>
+                    <div className={"settings__management-panel"}>
+                      <form className={"settings__management-form"} onSubmit={addCategory}>
                         <label>Category name<input aria-label="New category name" value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} placeholder="e.g. Client work" /></label>
                         <label>Color<select aria-label="New category color" value={newCategoryColor} onChange={(event) => setNewCategoryColor(event.target.value)}>{activityColorOptions.map((option) => <option key={option.token} value={option.token}>{option.label}</option>)}</select></label>
-                        <button className={styles.toggle} type="submit">Add category</button>
+                        <button className={"settings__toggle"} type="submit">Add category</button>
                       </form>
-                      {removedCategories.length > 0 && <div className={styles.managementList}><span className={styles.managementListLabel}>Removed categories</span>{removedCategories.map((category) => <div className={styles.managementRow} key={category.id}><span>{category.name}</span><button className={styles.textButton} type="button" onClick={() => restoreCategory(category.id)}>Restore</button></div>)}</div>}
+                      {removedCategories.length > 0 && <div className={"settings__management-list"}><span className={"settings__management-list-label"}>Removed categories</span>{removedCategories.map((category) => <div className={"settings__management-row"} key={category.id}><span>{category.name}</span><button className={"settings__text-button"} type="button" onClick={() => restoreCategory(category.id)}>Restore</button></div>)}</div>}
                     </div>
                   </div>
-                  <div className={styles.setting}><div><strong>Visible categories</strong><span>Hide categories from the timeline without deleting their history.</span></div><div className={styles.categoryChecks}>{availableCategories.map((category) => <label key={category.id}><input type="checkbox" checked={preferences.categoryIds.includes(category.id)} onChange={() => toggleCategory(category.id)} />{category.name}</label>)}</div></div>
-                  <div className={`${styles.setting} ${styles.categorySettingsSetting}`}><div><strong>Category defaults</strong><span>Set each category&apos;s global color and priority for new activities.</span></div><div className={styles.categorySettings}>{availableCategories.map((category) => { const setting = preferences.categorySettings[category.id] ?? { colorToken: category.colorToken, priority: preferences.priorityOptions[0] ?? "normal" }; return <div className={styles.categorySetting} key={category.id}><div className={styles.categorySettingName}><span className={styles.categoryColorDot} style={{ background: `var(--activity-color-${setting.colorToken})` }} /><strong>{category.name}</strong><button className={styles.textButton} type="button" onClick={() => removeCategory(category)} aria-label={`Remove ${category.name} category`}>Remove</button></div><div className={styles.categorySettingControls}><label>Color<select aria-label={`${category.name} color`} value={setting.colorToken} onChange={(event) => updateCategorySetting(category.id, { colorToken: event.target.value as typeof setting.colorToken })}>{activityColorOptions.map((option) => <option key={option.token} value={option.token}>{option.label}</option>)}</select></label><label>Priority<select aria-label={`${category.name} default priority`} value={setting.priority} onChange={(event) => updateCategorySetting(category.id, { priority: event.target.value as ActivityPriority })}>{preferences.priorityOptions.map((priority) => <option key={priority} value={priority}>{priority.replace(/[-_]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase())}</option>)}</select></label></div></div>; })}</div></div>
+                  <div className={"settings__row"}><div><strong>Visible categories</strong><span>Hide categories from the timeline without deleting their history.</span></div><div className={"settings__category-checks"}>{availableCategories.map((category) => <label key={category.id}><input type="checkbox" checked={preferences.categoryIds.includes(category.id)} onChange={() => toggleCategory(category.id)} />{category.name}</label>)}</div></div>
+                  <div className={`${"settings__row"} ${"settings__category-defaults"}`}><div><strong>Category defaults</strong><span>Set each category&apos;s global color and priority for new activities.</span></div><div className={"settings__categories"}>{availableCategories.map((category) => { const setting = preferences.categorySettings[category.id] ?? { colorToken: category.colorToken, priority: preferences.priorityOptions[0] ?? "normal" }; return <div className={"settings__category"} key={category.id}><div className={"settings__category-name"}><span className={"settings__category-dot"} style={{ background: `var(--activity-color-${setting.colorToken})` }} /><strong>{category.name}</strong><button className={"settings__text-button"} type="button" onClick={() => removeCategory(category)} aria-label={`Remove ${category.name} category`}>Remove</button></div><div className={"settings__category-controls"}><label>Color<select aria-label={`${category.name} color`} value={setting.colorToken} onChange={(event) => updateCategorySetting(category.id, { colorToken: event.target.value as typeof setting.colorToken })}>{activityColorOptions.map((option) => <option key={option.token} value={option.token}>{option.label}</option>)}</select></label><label>Priority<select aria-label={`${category.name} default priority`} value={setting.priority} onChange={(event) => updateCategorySetting(category.id, { priority: event.target.value as ActivityPriority })}>{preferences.priorityOptions.map((priority) => <option key={priority} value={priority}>{priority.replace(/[-_]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase())}</option>)}</select></label></div></div>; })}</div></div>
                 </section>
                 )}
 
                 {settingsTab === "priorities" && (
-                <section className={styles.settingsTabPanel} id="settings-panel-priorities" role="tabpanel" aria-labelledby="settings-tab-priorities">
-                  <div className={styles.setting}><div><strong>Manage priorities</strong><span>Priority options are global. Existing activities keep their recorded value.</span></div><div className={styles.managementPanel}><form className={styles.managementForm} onSubmit={addPriority}><label>Priority name<input aria-label="New priority name" value={newPriorityName} onChange={(event) => setNewPriorityName(event.target.value)} placeholder="e.g. Urgent" /></label><button className={styles.toggle} type="submit">Add priority</button></form><div className={styles.managementList}>{preferences.priorityOptions.map((priority) => <div className={styles.managementRow} key={priority}><span>{priority.replace(/[-_]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase())}</span><button className={styles.textButton} type="button" onClick={() => removePriority(priority)} aria-label={`Remove ${priority} priority`}>Remove</button></div>)}</div></div></div>
+                <section className={"settings__panel"} id="settings-panel-priorities" role="tabpanel" aria-labelledby="settings-tab-priorities">
+                  <div className={"settings__row"}><div><strong>Manage priorities</strong><span>Priority options are global. Existing activities keep their recorded value.</span></div><div className={"settings__management-panel"}><form className={"settings__management-form"} onSubmit={addPriority}><label>Priority name<input aria-label="New priority name" value={newPriorityName} onChange={(event) => setNewPriorityName(event.target.value)} placeholder="e.g. Urgent" /></label><button className={"settings__toggle"} type="submit">Add priority</button></form><div className={"settings__management-list"}>{preferences.priorityOptions.map((priority) => <div className={"settings__management-row"} key={priority}><span>{priority.replace(/[-_]/g, " ").replace(/\b\w/g, (character) => character.toUpperCase())}</span><button className={"settings__text-button"} type="button" onClick={() => removePriority(priority)} aria-label={`Remove ${priority} priority`}>Remove</button></div>)}</div></div></div>
                 </section>
                 )}
 
                 {settingsTab === "appearance" && (
-                <section className={styles.settingsTabPanel} id="settings-panel-appearance" role="tabpanel" aria-labelledby="settings-tab-appearance">
-                  <div className={styles.setting}><div><strong>Theme</strong><span>Light and dark are saved under workflow.theme.</span></div><button className={styles.toggle} type="button" onClick={toggleTheme} aria-pressed={theme === "dark"}>{theme === "dark" ? "Dark" : "Light"}</button></div>
+                <section className={"settings__panel"} id="settings-panel-appearance" role="tabpanel" aria-labelledby="settings-tab-appearance">
+                  <div className={"settings__row"}><div><strong>Theme</strong><span>Light and dark are saved under workflow.theme.</span></div><button className={"settings__toggle"} type="button" onClick={toggleTheme} aria-pressed={theme === "dark"}>{theme === "dark" ? "Dark" : "Light"}</button></div>
                 </section>
                 )}
 
                 {settingsTab === "data" && (
-                <section className={styles.settingsTabPanel} id="settings-panel-data" role="tabpanel" aria-labelledby="settings-tab-data">
-                  <div className={styles.setting}><div><strong>Activity backup</strong><span>Export a JSON copy or replace this browser&apos;s activities from a validated backup.</span></div><div className={styles.backupActions}><button className={styles.toggle} type="button" onClick={exportBackup}>Export backup</button><button className={styles.toggle} type="button" onClick={() => importInputRef.current?.click()}>Import backup</button><input className={styles.fileInput} ref={importInputRef} type="file" accept="application/json,.json" aria-label="Choose activity backup" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = ""; }} /></div></div>
+                <section className={"settings__panel"} id="settings-panel-data" role="tabpanel" aria-labelledby="settings-tab-data">
+                  <div className={"settings__row"}><div><strong>Activity backup</strong><span>Export a JSON copy or replace this browser&apos;s activities from a validated backup.</span></div><div className={"settings__backup-actions"}><button className={"settings__toggle"} type="button" onClick={exportBackup}>Export backup</button><button className={"settings__toggle"} type="button" onClick={() => importInputRef.current?.click()}>Import backup</button><input className={"settings__file-input"} ref={importInputRef} type="file" accept="application/json,.json" aria-label="Choose activity backup" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = ""; }} /></div></div>
                 </section>
                 )}
 
-                {persistenceNotice && <p className={styles.persistenceNotice} role="status">{persistenceNotice}</p>}
+                {persistenceNotice && <p className={"settings__notice"} role="pwa-status">{persistenceNotice}</p>}
                 </div>
               </div>
             </div>
           )}
 
-          {!isSearch && !isStatistics && !isSettings && <p className={styles.note}><Icon size={15} /><Sparkles size={14} />{note}</p>}
+          {!isSearch && !isStatistics && !isSettings && <p className={"route__note"}><Icon size={15} /><Sparkles size={14} />{note}</p>}
         </section>
       </main>
     </div>

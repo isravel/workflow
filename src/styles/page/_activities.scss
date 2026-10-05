@@ -1,0 +1,395 @@
+@use "../tokens" as tokens;
+
+.activity {
+  position: absolute;
+  display: flex;
+  min-width: 0;
+  height: 48px;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px;
+  overflow: hidden;
+  container-type: inline-size;
+  border: 0;
+  border: 2px solid transparent;
+  background: color-mix(in srgb, var(--activity-color) 12%, var(--color-surface));
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  transition: transform 180ms tokens.$ease-standard, box-shadow 180ms ease;
+  border-radius: 8px;
+
+  &:hover,
+  &:focus-visible {
+    z-index: 2;
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--color-text) 12%, transparent);
+    outline: none;
+
+    // transform: translateY(-2px);
+    background: color-mix(in srgb, var(--activity-color) 18%, var(--color-surface));
+    border-color: var(--activity-color);
+  }
+
+  &--selected {
+    overflow: visible;
+    outline: 2px solid color-mix(in srgb, var(--activity-color) 70%, var(--color-focus));
+    outline-offset: 1px;
+  }
+
+  &.activity--popover-open {
+    z-index: 21;
+  }
+
+  &[data-compact="true"] .activity__icon {
+    display: none;
+  }
+
+  &--dragging,
+  &--resizing {
+    transition: none;
+  }
+
+  &__handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 3;
+    width: 10px;
+    cursor: ew-resize;
+
+    &::after {
+      position: absolute;
+      top: 50%;
+      left: 4px;
+      width: 2px;
+      height: calc(100% - 10px);
+      transform: translateY(-50%);
+      border-radius: 2px;
+      background: var(--activity-color);
+      content: "";
+      opacity: 0.75;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: -2px;
+    }
+
+    &--start {
+      left: -4px;
+    }
+
+    &--end {
+      right: -4px;
+    }
+  }
+
+  &__icon {
+    display: grid;
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    place-items: center;
+    border-radius: 6px;
+
+    // background: color-mix(in srgb, var(--activity-color) 18%, var(--color-surface));
+
+    color: var(--activity-color);
+
+    > svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &__body {
+    display: inline-flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  &__actions {
+    position: absolute;
+    z-index: 4;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    gap: 3px;
+  }
+
+  &__delete-button {
+    color: var(--color-coral);
+  }
+
+  &__title {
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__time {
+    display: block;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @container (max-width: 121px) {
+    &__icon {
+      display: none;
+    }
+  }
+}
+
+.timeline {
+  &__activity-preview {
+    position: absolute;
+    display: flex;
+    height: 62px;
+    align-items: center;
+    justify-content: center;
+    min-width: 56px;
+    padding: 0 8px;
+    overflow: hidden;
+    border: 1px dashed color-mix(in srgb, var(--activity-color) 65%, var(--color-border));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--activity-color) 18%, transparent);
+    color: var(--color-text);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  &__gap {
+    position: absolute;
+    top: 13px;
+    display: flex;
+    height: 18px;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 42px;
+    padding: 0 6px;
+    overflow: hidden;
+    border: 1px dashed var(--color-border);
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--color-surface-muted) 76%, transparent);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 9px;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+    opacity: 0.8;
+    transition: 160ms ease;
+    white-space: nowrap;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--color-accent);
+      background: var(--color-accent-soft);
+      color: var(--color-accent-strong);
+      opacity: 1;
+      outline: none;
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    strong {
+      margin-left: 6px;
+      font-size: 13px;
+    }
+  }
+
+  &__more {
+    position: absolute;
+    right: 14px;
+    bottom: 12px;
+    padding: 5px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  &__empty {
+    position: absolute;
+    top: 55px;
+    left: 20px;
+    color: var(--color-text-muted);
+    font-size: 11px;
+    pointer-events: none;
+  }
+}
+
+.activity-popover {
+  position: absolute;
+  z-index: 8;
+  display: grid;
+  width: 250px;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-surface);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--color-text) 18%, transparent);
+  color: var(--color-text);
+  cursor: default;
+  pointer-events: auto;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  &__heading {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+
+    strong {
+      overflow: hidden;
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      color: var(--color-text-muted);
+      font-size: 10px;
+    }
+  }
+
+  &__close {
+    display: grid;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--activity-color);
+      color: var(--activity-color);
+      outline: none;
+    }
+  }
+
+  &--above {
+    bottom: calc(100% + 8px);
+    left: 0;
+  }
+
+  &--below {
+    top: calc(100% + 8px);
+    left: 0;
+  }
+
+  &--right {
+    right: 0;
+    left: auto;
+  }
+
+  &__meta {
+    display: grid;
+    gap: 2px;
+    color: var(--color-text-muted);
+    font-size: 10px;
+  }
+
+  &__notes {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    color: var(--color-text-muted);
+    font-size: 10px;
+
+    span {
+      color: var(--color-accent);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+    padding-top: 2px;
+  }
+}
+
+.activity__actions,
+.activity-popover__actions {
+  button {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--activity-color) 30%, var(--color-border));
+    border-radius: 5px;
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 800;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--activity-color);
+      color: var(--activity-color);
+      outline: none;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+  }
+}
+
+@media (pointer: coarse) {
+  .activity {
+    &__handle {
+      width: 22px;
+
+      &::after {
+        left: 9px;
+      }
+    }
+  }
+
+  .timeline__more {
+    min-height: 44px;
+    padding: 0 10px;
+  }
+}
