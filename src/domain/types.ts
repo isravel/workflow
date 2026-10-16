@@ -37,4 +37,5 @@ export type Activity = {
   taskId?: string;
   createdAt?: string;
   updatedAt?: string;
+  isSample?: boolean;
 };

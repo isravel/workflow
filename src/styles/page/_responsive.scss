@@ -65,6 +65,12 @@
     }
   }
 
+  .sample-data-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
   .button-icon {
     width: 44px;
     min-height: 44px;

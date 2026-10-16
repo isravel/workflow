@@ -1,4 +1,5 @@
 import type { Activity, Category } from "@/domain/types";
+import { timestampForWallTime } from "@/domain/time";
 
 export const categories: Category[] = [
   { id: "deep-work", name: "Deep Work", kind: "focus", colorToken: "violet-600", icon: "focus" },
@@ -43,3 +44,21 @@ export const demoActivities: Activity[] = [
   activity("activity-5", "Documentation", "16:15", "17:00", "admin"),
   activity("activity-6", "Release planning", "11:17", null, "product", ["planning"]),
 ];
+
+const minutesFromTimestamp = (timestamp: string) => {
+  const [hour, minute] = timestamp.slice(11, 16).split(":").map(Number);
+  return hour * 60 + minute;
+};
+
+export const demoActivitiesForDate = (date: string, timezone: string): Activity[] =>
+  demoActivities.map((demo) => ({
+    ...demo,
+    id: `sample-${demo.id}`,
+    startAt: timestampForWallTime(date, minutesFromTimestamp(demo.startAt), timezone),
+    endAt: timestampForWallTime(
+      date,
+      demo.endAt ? minutesFromTimestamp(demo.endAt) : 12 * 60,
+      timezone,
+    ),
+    isSample: true,
+  }));

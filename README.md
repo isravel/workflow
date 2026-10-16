@@ -25,6 +25,8 @@ NEXT_PUBLIC_ACTIVITY_API_URL=http://127.0.0.1:7001
 
 Use the Settings backup controls before clearing browser data. The supported browser target is the current evergreen desktop, tablet, and mobile browsers with Pointer Events and Web Storage support.
 
+An empty journal starts with sample activities so you can explore the timeline. Clear them from the banner on the timeline or in Settings → Data; your own activities stay in place.
+
 ## PWA and offline behavior
 
 The production build emits an installable WorkFlow Journal PWA in `out/`. It includes a web manifest, app icons, and a service worker that caches the app shell and previously visited routes. Activity changes continue to save in this browser while offline.

@@ -1,3 +1,5 @@
+import { activityColorOptions } from "@/domain/activityColors";
+import { weeklyHolidayOptions, type TimelinePreferences } from "@/domain/preferences";
 import type { Activity, Category, Task } from "@/domain/types";
 import { addDays, addMonths, dateFromTimestamp, formatTime } from "@/domain/time";
 
@@ -32,6 +34,74 @@ export type ActivityExportRow = {
   task: string;
   tags: string;
   notes: string;
+};
+
+export type ActivityExportSettingRow = {
+  section: string;
+  option: string;
+  value: string;
+};
+
+const formatPriority = (priority: string) => priority
+  .replace(/[-_]/g, " ")
+  .replace(/\b\w/g, (character) => character.toUpperCase());
+
+export const buildActivityExportSettings = (
+  preferences: TimelinePreferences,
+  configuredCategories: Category[],
+  theme: "light" | "dark",
+  showRestDays: boolean,
+  viewMode: "timeline" | "kanban" | "table",
+): ActivityExportSettingRow[] => {
+  const rows: ActivityExportSettingRow[] = [
+    { section: "Timeline", option: "Visible hours", value: `${preferences.startHour} to ${preferences.endHour}` },
+    { section: "Timeline", option: "Snap interval", value: `${preferences.snapMinutes} minutes` },
+    { section: "Timeline", option: "Timezone", value: preferences.timezone },
+    { section: "Rest days", option: "Display", value: showRestDays ? "Shown" : "Hidden" },
+    {
+      section: "Rest days",
+      option: "Weekly holidays",
+      value: preferences.weeklyHolidayDays.length
+        ? weeklyHolidayOptions.filter((day) => preferences.weeklyHolidayDays.includes(day.value)).map((day) => day.label).join(", ")
+        : "None",
+    },
+    { section: "Priorities", option: "Available options", value: preferences.priorityOptions.map(formatPriority).join(", ") },
+    { section: "Appearance", option: "Theme", value: formatPriority(theme) },
+    {
+      section: "Appearance",
+      option: "Activity view",
+      value: viewMode === "kanban" ? "Kanban" : viewMode === "table" ? "Table" : "Timeline",
+    },
+  ];
+
+  const colorNameByToken = new Map(activityColorOptions.map((color) => [color.token, color.label]));
+  const removedCategoryIds = new Set(preferences.removedCategoryIds);
+  for (const category of configuredCategories) {
+    const setting = preferences.categorySettings[category.id] ?? {
+      colorToken: category.colorToken,
+      priority: preferences.priorityOptions[0] ?? "normal",
+    };
+    const visibility = removedCategoryIds.has(category.id)
+      ? "Removed"
+      : preferences.categoryIds.includes(category.id) ? "Visible" : "Hidden";
+    const section = `Category: ${category.name}`;
+    rows.push(
+      { section, option: "Status", value: visibility },
+      { section, option: "Color", value: colorNameByToken.get(setting.colorToken) ?? setting.colorToken },
+      { section, option: "Default priority", value: formatPriority(setting.priority) },
+    );
+  }
+
+  const restDayOverrides = Object.entries(preferences.restDayOverrides).sort(([left], [right]) => left.localeCompare(right));
+  if (restDayOverrides.length === 0) {
+    rows.push({ section: "Rest days", option: "Date overrides", value: "None" });
+  } else {
+    for (const [date, kind] of restDayOverrides) {
+      rows.push({ section: "Rest days", option: `Date override · ${date}`, value: kind === "public-holiday" ? "Public holiday" : "Leave" });
+    }
+  }
+
+  return rows;
 };
 
 export const resolveActivityDateRange = (
@@ -136,10 +206,16 @@ const csvCell = (value: string | number) => {
   return `"${safeText.replace(/"/g, '""')}"`;
 };
 
-export const createActivityCsv = (rows: ActivityExportRow[]) => {
+export const createActivityCsv = (rows: ActivityExportRow[], settings: ActivityExportSettingRow[] = []) => {
   const heading = exportColumns.map(({ label }) => csvCell(label)).join(",");
   const body = rows.map((row) => exportColumns.map(({ key }) => csvCell(row[key])).join(","));
-  return `\uFEFF${[heading, ...body].join("\r\n")}`;
+  const settingsSection = settings.length ? [
+    "",
+    csvCell("Journal settings"),
+    [csvCell("Section"), csvCell("Option"), csvCell("Value")].join(","),
+    ...settings.map((row) => [row.section, row.option, row.value].map(csvCell).join(",")),
+  ] : [];
+  return `\uFEFF${[heading, ...body, ...settingsSection].join("\r\n")}`;
 };
 
 const xmlEscape = (value: string | number) => String(value)
@@ -150,19 +226,24 @@ const xmlEscape = (value: string | number) => String(value)
   .replace(/"/g, "&quot;")
   .replace(/'/g, "&apos;");
 
-export const createActivityXls = (rows: ActivityExportRow[]) => {
+export const createActivityXls = (rows: ActivityExportRow[], settings: ActivityExportSettingRow[] = []) => {
   const headerRow = `<Row ss:StyleID="Header">${exportColumns.map(({ label }) => `<Cell><Data ss:Type="String">${xmlEscape(label)}</Data></Cell>`).join("")}</Row>`;
   const activityRows = rows.map((row) => `<Row>${exportColumns.map(({ key }) => {
     const value = row[key];
     const type = key === "durationMinutes" ? "Number" : "String";
     return `<Cell><Data ss:Type="${type}">${xmlEscape(value)}</Data></Cell>`;
   }).join("")}</Row>`).join("");
+  const settingsHeader = `<Row ss:StyleID="Header"><Cell><Data ss:Type="String">Section</Data></Cell><Cell><Data ss:Type="String">Option</Data></Cell><Cell><Data ss:Type="String">Value</Data></Cell></Row>`;
+  const settingsRows = settings.map((row) => `<Row>${[row.section, row.option, row.value].map((value) => `<Cell><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`).join("")}</Row>`).join("");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
   <Styles><Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#EEE9FA" ss:Pattern="Solid"/></Style></Styles>
   <Worksheet ss:Name="Activities"><Table>${headerRow}${activityRows}</Table>
+    <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions>
+  </Worksheet>
+  <Worksheet ss:Name="Settings"><Table>${settingsHeader}${settingsRows}</Table>
     <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane><ActivePane>2</ActivePane></WorksheetOptions>
   </Worksheet>
 </Workbook>`;
@@ -181,10 +262,12 @@ export const createActivityPrintDocument = (
   rows: ActivityExportRow[],
   rangeLabel: string,
   timezone: string,
+  settings: ActivityExportSettingRow[] = [],
 ) => {
   const totalMinutes = rows.reduce((sum, row) => sum + row.durationMinutes, 0);
   const header = exportColumns.map(({ label }) => `<th>${htmlEscape(label)}</th>`).join("");
   const body = rows.map((row) => `<tr>${exportColumns.map(({ key }) => `<td>${htmlEscape(row[key])}</td>`).join("")}</tr>`).join("");
+  const settingsBody = settings.map((row) => `<tr><td>${htmlEscape(row.section)}</td><td>${htmlEscape(row.option)}</td><td>${htmlEscape(row.value)}</td></tr>`).join("");
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>WorkFlow Journal activity report</title>
@@ -202,10 +285,15 @@ tr { break-inside: avoid; page-break-inside: avoid; }
 th, td { border: 1px solid #dedbe4; overflow-wrap: anywhere; padding: 5px; text-align: left; vertical-align: top; }
 th { background: #eee9fa; font-size: 9px; }
 td:nth-child(4) { text-align: right; }
+.settings { break-before: page; page-break-before: always; }
+.settings h2 { font-size: 16px; margin: 0 0 10px; }
+.settings table { table-layout: auto; }
+.settings td:first-child { width: 27%; }
 @media screen { body { margin: 24px auto; max-width: 1200px; padding: 0 20px; } }
 </style></head><body>
 <h1>WorkFlow Journal</h1><p class="meta">Activity report · ${htmlEscape(rangeLabel)} · ${htmlEscape(timezone)}</p>
 <div class="summary"><div>Activities<strong>${rows.length}</strong></div><div>Tracked time<strong>${htmlEscape(formatTotalDuration(totalMinutes))}</strong></div></div>
 <table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>
+<section class="settings"><h2>Journal settings</h2><table><thead><tr><th>Section</th><th>Option</th><th>Value</th></tr></thead><tbody>${settingsBody}</tbody></table></section>
 </body></html>`;
 };

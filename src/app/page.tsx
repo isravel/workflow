@@ -32,7 +32,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { categories, demoActivities } from "@/data/fixtures";
+import { categories } from "@/data/fixtures";
 import { activityColorOptions, isActivityColorToken, type ActivityColorToken } from "@/domain/activityColors";
 import type { Activity, ActivityPriority, Task, TaskStatus } from "@/domain/types";
 import {
@@ -65,7 +65,7 @@ import {
 import { durationMinutesFromInput } from "@/domain/parsing";
 import { buildTimelineLayout, timelineLayoutConstants } from "@/domain/timelineLayout";
 import { layoutModeForWidth, responsiveBreakpoints, timelineLaneCapForMode, type LayoutMode } from "@/domain/layoutMode";
-import { loadJournal, saveJournal } from "@/repositories/activityRepository";
+import { loadJournal, saveJournal, type SampleDataState } from "@/repositories/activityRepository";
 
 const viewModeStorageKey = "workflow.viewMode";
 const accentThemeStorageKey = "workflow.accentTheme";
@@ -105,6 +105,11 @@ const currentTimezone = () => currentPreferences().timezone;
 const formatTime = (value: string) => formatTimeInTimezone(value, currentTimezone());
 
 const clamp = (value: number, minimum: number, maximum: number) => Math.min(Math.max(value, minimum), maximum);
+
+const makeActivityReal = (activity: Activity): Activity => {
+  if (!activity.isSample) return activity;
+  return { ...activity, isSample: false };
+};
 
 const newActivityId = (counter: { current: number }, prefix: string) =>
   globalThis.crypto?.randomUUID?.() ?? `${prefix}-${Date.now()}-${counter.current++}`;
@@ -703,8 +708,9 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<ViewMode>("timeline");
   const [accentTheme, setAccentTheme] = useState<ActivityColorToken>(defaultAccentTheme);
   const [selectedDate, setSelectedDate] = useState("2026-09-18");
-  const [activities, setActivities] = useState(demoActivities);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [sampleDataState, setSampleDataState] = useState<SampleDataState>("pending");
   const [clock, setClock] = useState(() => defaultClockTimestamp);
   const [hydrated, setHydrated] = useState(false);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
@@ -797,6 +803,17 @@ export default function Home() {
     undoNoticeTimeoutRef.current = window.setTimeout(() => setUndoNotice(null), 6000);
   }, [activities, selectedActivityId, selectedDate]);
 
+  const clearSampleEntries = useCallback(() => {
+    const count = activities.filter((activity) => activity.isSample).length;
+    if (count === 0) return;
+    if (!window.confirm(`Clear ${count} sample ${count === 1 ? "entry" : "entries"}? Your activities and tasks will stay.`)) return;
+    recordUndo("sample entries removal");
+    setActivities((current) => current.filter((activity) => !activity.isSample));
+    setSelectedActivityId((current) => current && activities.find((activity) => activity.id === current)?.isSample ? null : current);
+    setSampleDataState("cleared");
+    setUndoNotice(`${count} sample ${count === 1 ? "entry" : "entries"} cleared`);
+  }, [activities, recordUndo]);
+
   const undo = useCallback(() => {
     const entry = undoStack.at(-1);
     if (!entry) return;
@@ -850,15 +867,12 @@ export default function Home() {
 
   useEffect(() => {
     let mounted = true;
-    const readinessTimeout = window.setTimeout(() => {
-      if (mounted) setHydrated(true);
-    }, 1500);
     loadJournal().then((journal) => {
       if (!mounted) return;
-      window.clearTimeout(readinessTimeout);
       if (journal) {
         const storedActivities = journal.activities;
         setTasks(journal.tasks);
+        setSampleDataState(journal.sampleDataState ?? "shown");
         const storedRunning = storedActivities.filter((activity) => activity.endAt === null);
         const normalizedActivities = storedRunning.length > 1
           ? storedActivities.map((activity) => activity.endAt === null && activity.id !== storedRunning.at(-1)?.id
@@ -880,14 +894,13 @@ export default function Home() {
     });
     return () => {
       mounted = false;
-      window.clearTimeout(readinessTimeout);
     };
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    void saveJournal({ activities, tasks });
-  }, [activities, tasks, hydrated]);
+    void saveJournal({ activities, tasks, sampleDataState });
+  }, [activities, tasks, hydrated, sampleDataState]);
 
   useEffect(() => {
     const dialog = quickEntryDialogRef.current;
@@ -965,7 +978,7 @@ export default function Home() {
       detailsUndoRecordedRef.current = true;
     }
     setActivities((current) => current.map((activity) => activity.id === activityId
-      ? { ...activity, ...value, updatedAt: activityTimestamp() }
+      ? { ...makeActivityReal(activity), ...value, updatedAt: activityTimestamp() }
       : activity));
     setSelectedDate(date);
   }, [activities, recordUndo]);
@@ -1056,7 +1069,7 @@ export default function Home() {
     recordUndo("activity creation");
     setActivities((current) => [
       ...current.map((activity) => durationMinutes === null && activity.endAt === null
-        ? { ...activity, endAt: new Date(clock).toISOString() }
+        ? { ...makeActivityReal(activity), endAt: new Date(clock).toISOString() }
         : activity),
       newActivity,
     ]);
@@ -1132,7 +1145,7 @@ export default function Home() {
     setTasks((current) => current.filter((item) => item.id !== task.id));
     setActivities((current) => current.map((activity) => {
       if (activity.taskId !== task.id) return activity;
-      const withoutTask = { ...activity };
+      const withoutTask = { ...makeActivityReal(activity) };
       delete withoutTask.taskId;
       return withoutTask;
     }));
@@ -1145,6 +1158,7 @@ export default function Home() {
   };
 
   const runningActivity = activities.find((activity) => activity.endAt === null);
+  const sampleActivityCount = activities.filter((activity) => activity.isSample).length;
   const selectedActivity = selectedActivityId
     ? activities.find((activity) => activity.id === selectedActivityId) ?? null
     : null;
@@ -1197,11 +1211,11 @@ export default function Home() {
     if (!running || dateFromTimestamp(running.startAt) !== previousDate) return;
 
     const completed = {
-      ...running,
+      ...makeActivityReal(running),
       endAt: timestampForMinutes(todayIso, 0),
     };
     const continuation = {
-      ...running,
+      ...makeActivityReal(running),
       id: newActivityId(activityIdCounter, "activity-midnight"),
       startAt: timestampForMinutes(todayIso, 0),
       endAt: null,
@@ -1214,7 +1228,7 @@ export default function Home() {
   const toggleTimer = useCallback(() => {
     if (runningActivity) {
       recordUndo("timer stop");
-      setActivities((current) => current.map((activity) => activity.endAt === null ? { ...activity, endAt: new Date(clock).toISOString() } : activity));
+      setActivities((current) => current.map((activity) => activity.endAt === null ? { ...makeActivityReal(activity), endAt: new Date(clock).toISOString() } : activity));
       return;
     }
 
@@ -1243,7 +1257,7 @@ export default function Home() {
     const { activity, startDate, todayDate } = timerRecovery;
     if (!continueTimer) {
       const stopAt = timestampForMinutes(addDays(startDate, 1), 0);
-      setActivities((current) => current.map((item) => item.id === activity.id ? { ...item, endAt: stopAt } : item));
+      setActivities((current) => current.map((item) => item.id === activity.id ? { ...makeActivityReal(item), endAt: stopAt } : item));
       setSelectedDate(startDate);
       setTimerRecovery(null);
       if (recoveryDialogRef.current?.open) recoveryDialogRef.current.close();
@@ -1255,7 +1269,7 @@ export default function Home() {
     let isFirst = true;
     while (day < todayDate) {
       continuations.push({
-        ...activity,
+        ...makeActivityReal(activity),
         id: isFirst ? activity.id : newActivityId(activityIdCounter, "activity-recovery"),
         startAt: isFirst ? activity.startAt : timestampForMinutes(day, 0),
         endAt: timestampForMinutes(addDays(day, 1), 0),
@@ -1264,7 +1278,7 @@ export default function Home() {
       isFirst = false;
     }
     const finalActivity: Activity = {
-      ...activity,
+      ...makeActivityReal(activity),
       id: isFirst ? activity.id : newActivityId(activityIdCounter, "activity-recovery"),
       startAt: timestampForMinutes(todayDate, 0),
       endAt: null,
@@ -1351,7 +1365,7 @@ export default function Home() {
     );
     const date = dateFromTimestamp(activity.startAt);
     const duplicate: Activity = {
-      ...activity,
+      ...makeActivityReal(activity),
       id: newActivityId(activityIdCounter, "activity-duplicate"),
       startAt: timestampForMinutes(date, nextStart),
       endAt: timestampForMinutes(date, nextStart + duration),
@@ -1505,7 +1519,7 @@ export default function Home() {
         setActivities((current) => current.map((activity) => {
           if (activity.id !== currentGesture.activityId) return activity;
           return {
-            ...activity,
+            ...makeActivityReal(activity),
             startAt: timestampForMinutes(currentGesture.dayIso, currentGesture.previewStartMinutes),
             endAt: currentGesture.preserveRunning
               ? null
@@ -1602,7 +1616,7 @@ export default function Home() {
       if (nextStart === range.startMinutes) return;
       recordUndo("activity move");
       setActivities((current) => current.map((item) => item.id === activity.id
-        ? { ...item, startAt: timestampForMinutes(dateFromTimestamp(activity.startAt), nextStart) }
+        ? { ...makeActivityReal(item), startAt: timestampForMinutes(dateFromTimestamp(activity.startAt), nextStart) }
         : item));
       return;
     }
@@ -1616,7 +1630,7 @@ export default function Home() {
     recordUndo("activity move");
     setActivities((current) => current.map((item) => item.id === activity.id
       ? {
-        ...item,
+        ...makeActivityReal(item),
         startAt: timestampForMinutes(dateFromTimestamp(activity.startAt), nextStart),
         endAt: timestampForMinutes(dateFromTimestamp(activity.startAt), nextStart + range.endMinutes - range.startMinutes),
       }
@@ -1630,7 +1644,7 @@ export default function Home() {
     if (nextEnd === range.endMinutes) return;
     recordUndo("activity resize");
     setActivities((current) => current.map((item) => item.id === activity.id
-      ? { ...item, endAt: timestampForMinutes(dateFromTimestamp(activity.startAt), nextEnd) }
+      ? { ...makeActivityReal(item), endAt: timestampForMinutes(dateFromTimestamp(activity.startAt), nextEnd) }
       : item));
   };
 
@@ -1676,7 +1690,7 @@ export default function Home() {
     if (nextStart === range.startMinutes) return;
     recordUndo("activity resize");
     setActivities((current) => current.map((item) => item.id === activity.id
-      ? { ...item, startAt: timestampForMinutes(dateFromTimestamp(activity.startAt), nextStart) }
+      ? { ...makeActivityReal(item), startAt: timestampForMinutes(dateFromTimestamp(activity.startAt), nextStart) }
       : item));
   };
 
@@ -1945,6 +1959,13 @@ export default function Home() {
             <button className={"button-primary"} type="button" onClick={addActivity}><Plus size={15} /> New activity</button>
           </div>
         </header>
+
+        {sampleActivityCount > 0 && (
+          <aside className={"sample-data-banner"} aria-label="Sample activity data">
+            <p><strong>Sample entries</strong> These examples help you explore the journal. Clearing them keeps your own entries.</p>
+            <button className={"button-text"} type="button" onClick={clearSampleEntries}>Clear sample entries</button>
+          </aside>
+        )}
 
         {/*
           <section className={"app__intro"} aria-labelledby="timeline-title">

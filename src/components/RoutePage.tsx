@@ -24,6 +24,7 @@ import {
   activityExportRanges,
   activityMatchesDateRange,
   buildActivityExportRows,
+  buildActivityExportSettings,
   createActivityCsv,
   createActivityPrintDocument,
   createActivityXls,
@@ -31,7 +32,7 @@ import {
   type ActivityExportRange,
 } from "@/domain/activityExport";
 import type { Activity, ActivityPriority, Category, Task } from "@/domain/types";
-import { createJournalBackup, importJournalBackup, loadJournal } from "@/repositories/activityRepository";
+import { createJournalBackup, importJournalBackup, loadJournal, saveJournal, type SampleDataState } from "@/repositories/activityRepository";
 
 type RoutePageProps = {
   eyebrow: string;
@@ -83,6 +84,7 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
   });
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [sampleDataState, setSampleDataState] = useState<SampleDataState>("pending");
   const [loadError, setLoadError] = useState<string | null>(null);
   const [persistenceNotice, setPersistenceNotice] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -106,6 +108,7 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
   const [clock, setClock] = useState(() => defaultClockTimestamp);
   const importInputRef = useRef<HTMLInputElement>(null);
   const visibleActivities = useMemo(() => activities ?? [], [activities]);
+  const sampleActivityCount = visibleActivities.filter((activity) => activity.isSample).length;
   const availableCategories = categoriesForPreferences(preferences);
   const configuredCategories = [...categories, ...preferences.customCategories];
   const removedCategories = configuredCategories.filter((category) => !availableCategories.some((item) => item.id === category.id));
@@ -135,6 +138,7 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
       if (mounted) {
         setActivities(journal?.activities ?? []);
         setTasks(journal?.tasks ?? []);
+        setSampleDataState(journal?.sampleDataState ?? "shown");
       }
     });
     const interval = window.setInterval(() => setClock(runtimeClock()), 1000);
@@ -347,7 +351,7 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
       setPersistenceNotice("Activity history is still loading.");
       return;
     }
-    const blob = new Blob([createJournalBackup({ activities, tasks })], { type: "application/json" });
+    const blob = new Blob([createJournalBackup({ activities, tasks, sampleDataState })], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -357,6 +361,33 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
     link.remove();
     URL.revokeObjectURL(url);
     setPersistenceNotice(`Exported ${activities.length} ${activities.length === 1 ? "activity" : "activities"} and ${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}.`);
+  };
+
+  const clearSampleEntries = async () => {
+    if (activities === null) {
+      setPersistenceNotice("Activity history is still loading.");
+      return;
+    }
+    const sampleEntries = activities.filter((activity) => activity.isSample);
+    if (sampleEntries.length === 0) return;
+    if (!window.confirm(`Clear ${sampleEntries.length} sample ${sampleEntries.length === 1 ? "entry" : "entries"}? Your activities and tasks will stay.`)) return;
+
+    const remainingActivities = activities.filter((activity) => !activity.isSample);
+    const result = await saveJournal({
+      activities: remainingActivities,
+      tasks,
+      sampleDataState: "cleared",
+    }, (error) => console.error("Could not clear sample activities.", error));
+    if (!result.saved) {
+      setPersistenceNotice("Sample entries could not be cleared. Your current activities were kept.");
+      return;
+    }
+
+    setActivities(remainingActivities);
+    setSampleDataState("cleared");
+    setPersistenceNotice(result.remoteError
+      ? `Cleared ${sampleEntries.length} sample ${sampleEntries.length === 1 ? "entry" : "entries"} in this browser. The data service could not be updated.`
+      : `Cleared ${sampleEntries.length} sample ${sampleEntries.length === 1 ? "entry" : "entries"}. Your other activities were kept.`);
   };
 
   const exportActivityReport = (format: "csv" | "xls" | "pdf") => {
@@ -380,6 +411,9 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
       preferences.timezone,
       clock,
     );
+    const storedViewMode = window.localStorage.getItem("workflow.viewMode");
+    const viewMode = storedViewMode === "kanban" || storedViewMode === "table" ? storedViewMode : "timeline";
+    const settings = buildActivityExportSettings(preferences, configuredCategories, theme, showRestDays, viewMode);
     const rangeLabel = exportRange === "all"
       ? "All dates"
       : exportRange === "custom"
@@ -396,7 +430,7 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
         return;
       }
       printWindow.document.open();
-      printWindow.document.write(createActivityPrintDocument(rows, rangeLabel, preferences.timezone));
+      printWindow.document.write(createActivityPrintDocument(rows, rangeLabel, preferences.timezone, settings));
       printWindow.document.close();
       printWindow.focus();
       window.setTimeout(() => printWindow.print(), 250);
@@ -405,12 +439,12 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
     }
 
     if (format === "csv") {
-      downloadTextFile(createActivityCsv(rows), "text/csv;charset=utf-8", `workflow-activities-${rangeFilePart}.csv`);
+      downloadTextFile(createActivityCsv(rows, settings), "text/csv;charset=utf-8", `workflow-activities-${rangeFilePart}.csv`);
       setPersistenceNotice(`Exported ${rows.length} activities as CSV.`);
       return;
     }
 
-    downloadTextFile(createActivityXls(rows), "application/vnd.ms-excel;charset=utf-8", `workflow-activities-${rangeFilePart}.xls`);
+    downloadTextFile(createActivityXls(rows, settings), "application/vnd.ms-excel;charset=utf-8", `workflow-activities-${rangeFilePart}.xls`);
     setPersistenceNotice(`Exported ${rows.length} activities as Excel.`);
   };
 
@@ -426,6 +460,7 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
       }
       setActivities(imported.activities);
       setTasks(imported.tasks);
+      setSampleDataState(imported.sampleDataState ?? "shown");
       setPersistenceNotice(`Imported ${imported.activities.length} ${imported.activities.length === 1 ? "activity" : "activities"} and ${imported.tasks.length} ${imported.tasks.length === 1 ? "task" : "tasks"}.`);
     } catch (error) {
       setPersistenceNotice(error instanceof Error ? error.message : "The selected backup could not be imported.");
@@ -631,7 +666,18 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
                       <button className={"settings__toggle"} type="button" disabled={activities === null || !resolvedExportRange} onClick={() => exportActivityReport("csv")}>Export CSV</button>
                       <button className={"settings__toggle"} type="button" disabled={activities === null || !resolvedExportRange} onClick={() => exportActivityReport("pdf")}>Export PDF</button>
                     </div>
-                    <p className={"settings__footnote"}>The date range applies to all formats. PDF opens a print window where you can choose Save as PDF.</p>
+                    <p className={"settings__footnote"}>Each export includes the matching activities and your current journal settings. PDF opens a print window where you can choose Save as PDF.</p>
+                  </div>
+                  <div className={"settings__row"}>
+                    <div><strong>Sample entries</strong><span>Examples appear automatically when the journal is empty. Clear them here; activities you recorded will stay.</span></div>
+                    <button
+                      className={"settings__toggle"}
+                      type="button"
+                      disabled={activities === null || sampleActivityCount === 0}
+                      onClick={() => void clearSampleEntries()}
+                    >
+                      Clear sample entries{sampleActivityCount > 0 ? ` · ${sampleActivityCount}` : ""}
+                    </button>
                   </div>
                   <div className={"settings__row"}><div><strong>Activity backup</strong><span>Export a JSON copy or replace this browser&apos;s activities from a validated backup.</span></div><div className={"settings__backup-actions"}><button className={"settings__toggle"} type="button" onClick={exportBackup}>Export backup</button><button className={"settings__toggle"} type="button" onClick={() => importInputRef.current?.click()}>Import backup</button><input className={"settings__file-input"} ref={importInputRef} type="file" accept="application/json,.json" aria-label="Choose activity backup" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = ""; }} /></div></div>
                 </section>
