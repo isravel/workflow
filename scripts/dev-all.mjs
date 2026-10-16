@@ -4,9 +4,33 @@ import { fileURLToPath } from "node:url";
 
 const appDirectory = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 const dataAppDirectory = resolve(appDirectory, "../data-app");
+const appPort = process.env.WORKFLOW_APP_PORT ?? "3001";
+const dataPort = process.env.WORKFLOW_DATA_PORT ?? "7002";
+const appOrigins = `http://localhost:${appPort},http://127.0.0.1:${appPort}`;
+const dataApiUrl = process.env.NEXT_PUBLIC_ACTIVITY_API_URL ?? `http://127.0.0.1:${dataPort}`;
 const services = [
-  { name: "data", cwd: dataAppDirectory, command: process.execPath, args: ["--watch", "server.mjs"] },
-  { name: "app", cwd: appDirectory, command: process.execPath, args: [resolve(appDirectory, "node_modules/next/dist/bin/next"), "dev"] },
+  {
+    name: "data",
+    cwd: dataAppDirectory,
+    command: process.execPath,
+    args: ["server.mjs"],
+    env: {
+      ...process.env,
+      PORT: dataPort,
+      CORS_ORIGIN: process.env.CORS_ORIGIN ?? appOrigins,
+    },
+  },
+  {
+    name: "app",
+    cwd: appDirectory,
+    command: process.execPath,
+    args: [resolve(appDirectory, "node_modules/next/dist/bin/next"), "dev", "--port", appPort],
+    env: {
+      ...process.env,
+      WORKFLOW_DEV_ALL: "1",
+      NEXT_PUBLIC_ACTIVITY_API_URL: dataApiUrl,
+    },
+  },
 ];
 const children = [];
 let shuttingDown = false;
@@ -40,11 +64,11 @@ const shutdown = (exitCode) => {
   setTimeout(() => process.exit(exitCode), 250);
 };
 
-services.forEach(({ name, cwd, command, args }) => {
+services.forEach(({ name, cwd, command, args, env }) => {
   const child = spawn(command, args, {
     cwd,
     detached: process.platform !== "win32",
-    env: process.env,
+    env,
     stdio: ["inherit", "pipe", "pipe"],
   });
   children.push(child);

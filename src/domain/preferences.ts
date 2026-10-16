@@ -14,7 +14,7 @@ export const timezoneOptions = [
 ] as const;
 
 export type TimezoneOption = (typeof timezoneOptions)[number];
-export type SnapMinutes = 15 | 30 | 60;
+export type SnapMinutes = 5 | 10 | 15 | 30 | 60;
 export type WeeklyHolidayDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type RestDayKind = "public-holiday" | "leave";
 export type RestDayStatus = "weekly-holiday" | RestDayKind;
@@ -69,7 +69,7 @@ export const defaultTimelinePreferences: TimelinePreferences = {
 const isTime = (value: unknown): value is string => typeof value === "string" && /^\d{2}:\d{2}$/.test(value);
 const isTimezone = (value: unknown): value is TimezoneOption =>
   typeof value === "string" && timezoneOptions.includes(value as TimezoneOption);
-const isSnapMinutes = (value: unknown): value is SnapMinutes => value === 15 || value === 30 || value === 60;
+const isSnapMinutes = (value: unknown): value is SnapMinutes => value === 5 || value === 10 || value === 15 || value === 30 || value === 60;
 const isWeeklyHolidayDay = (value: unknown): value is WeeklyHolidayDay =>
   value === 0 || value === 1 || value === 2 || value === 3 || value === 4 || value === 5 || value === 6;
 const isRestDayKind = (value: unknown): value is RestDayKind => value === "public-holiday" || value === "leave";

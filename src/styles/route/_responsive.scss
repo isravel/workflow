@@ -78,6 +78,18 @@
       }
     }
 
+    &__export-heading {
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    &__export-actions {
+      > button {
+        flex: 1 1 130px;
+        min-height: 44px;
+      }
+    }
+
     &__field-pair {
       > label {
         flex: 1 1 140px;

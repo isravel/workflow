@@ -47,7 +47,7 @@ pnpm dev
 bun dev
 ```
 
-To start both the frontend and the data service in one terminal:
+To start both the frontend and the data service in one terminal, on ports 3001 and 7002:
 
 ```bash
 npm run dev:all
@@ -55,7 +55,9 @@ npm run dev:all
 
 Press `Ctrl+C` to stop both services.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) when using `npm run dev`, or [http://localhost:3001](http://localhost:3001) when using `npm run dev:all`.
+
+`dev:all` uses ports 3001 and 7002 by default and keeps its Next.js development files separate from `npm run dev`. Set `WORKFLOW_APP_PORT` or `WORKFLOW_DATA_PORT` before the command to choose different ports. The script points the frontend at the matching data service automatically. The data service does not auto-restart when its code changes in this combined mode; restart `dev:all` after editing it.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

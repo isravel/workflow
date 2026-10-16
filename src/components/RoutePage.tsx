@@ -20,6 +20,16 @@ import {
   type TimelinePreferences,
 } from "@/domain/preferences";
 import { addDays, dateFromTimestamp, defaultClockTimestamp, runtimeClock } from "@/domain/time";
+import {
+  activityExportRanges,
+  activityMatchesDateRange,
+  buildActivityExportRows,
+  createActivityCsv,
+  createActivityPrintDocument,
+  createActivityXls,
+  resolveActivityDateRange,
+  type ActivityExportRange,
+} from "@/domain/activityExport";
 import type { Activity, ActivityPriority, Category, Task } from "@/domain/types";
 import { createJournalBackup, importJournalBackup, loadJournal } from "@/repositories/activityRepository";
 
@@ -49,6 +59,17 @@ const formatDuration = (startAt: string, endAt: string | null, clock: number) =>
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 };
 
+const downloadTextFile = (contents: string, type: string, filename: string) => {
+  const url = URL.createObjectURL(new Blob([contents], { type }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
 const minutesForActivity = (activity: Activity, clock: number) =>
   Math.max(0, Math.round((new Date(activity.endAt ?? new Date(clock).toISOString()).getTime() - new Date(activity.startAt).getTime()) / 60000));
 
@@ -68,6 +89,9 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
   const [newCategoryColor, setNewCategoryColor] = useState("violet-600");
   const [newPriorityName, setNewPriorityName] = useState("");
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("timeline");
+  const [exportRange, setExportRange] = useState<ActivityExportRange>("all");
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
   const [showRestDays, setShowRestDays] = useState(() => (
     typeof window === "undefined" || window.localStorage.getItem(showRestDaysStorageKey) !== "false"
   ));
@@ -85,6 +109,18 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
   const availableCategories = categoriesForPreferences(preferences);
   const configuredCategories = [...categories, ...preferences.customCategories];
   const removedCategories = configuredCategories.filter((category) => !availableCategories.some((item) => item.id === category.id));
+  const exportToday = dateFromTimestamp(new Date(clock).toISOString(), preferences.timezone);
+  const resolvedExportRange = resolveActivityDateRange(
+    exportRange,
+    exportToday,
+    preferences.timezone,
+    exportStartDate,
+    exportEndDate,
+  );
+  const activitiesInExportRange = useMemo(() => {
+    if (!activities || !resolvedExportRange) return [];
+    return activities.filter((activity) => activityMatchesDateRange(activity, resolvedExportRange, preferences.timezone));
+  }, [activities, resolvedExportRange, preferences.timezone]);
 
   useEffect(() => {
     const syncPreferences = () => setPreferences(readTimelinePreferences());
@@ -323,6 +359,61 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
     setPersistenceNotice(`Exported ${activities.length} ${activities.length === 1 ? "activity" : "activities"} and ${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}.`);
   };
 
+  const exportActivityReport = (format: "csv" | "xls" | "pdf") => {
+    if (activities === null) {
+      setPersistenceNotice("Activity history is still loading.");
+      return;
+    }
+    if (!resolvedExportRange) {
+      setPersistenceNotice("Choose a valid start and end date for your export.");
+      return;
+    }
+    if (activitiesInExportRange.length === 0) {
+      setPersistenceNotice("There are no activities in that date range.");
+      return;
+    }
+
+    const rows = buildActivityExportRows(
+      activitiesInExportRange,
+      configuredCategories,
+      tasks,
+      preferences.timezone,
+      clock,
+    );
+    const rangeLabel = exportRange === "all"
+      ? "All dates"
+      : exportRange === "custom"
+        ? `${exportStartDate} to ${exportEndDate}`
+        : activityExportRanges.find((range) => range.value === exportRange)?.label ?? "Selected dates";
+    const rangeFilePart = resolvedExportRange.from && resolvedExportRange.to
+      ? `${resolvedExportRange.from}-to-${resolvedExportRange.to}`
+      : "all-dates";
+
+    if (format === "pdf") {
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        setPersistenceNotice("Allow pop-ups to open the PDF export. Choose Save as PDF in the print window.");
+        return;
+      }
+      printWindow.document.open();
+      printWindow.document.write(createActivityPrintDocument(rows, rangeLabel, preferences.timezone));
+      printWindow.document.close();
+      printWindow.focus();
+      window.setTimeout(() => printWindow.print(), 250);
+      setPersistenceNotice("Choose Save as PDF in the print window to download your report.");
+      return;
+    }
+
+    if (format === "csv") {
+      downloadTextFile(createActivityCsv(rows), "text/csv;charset=utf-8", `workflow-activities-${rangeFilePart}.csv`);
+      setPersistenceNotice(`Exported ${rows.length} activities as CSV.`);
+      return;
+    }
+
+    downloadTextFile(createActivityXls(rows), "application/vnd.ms-excel;charset=utf-8", `workflow-activities-${rangeFilePart}.xls`);
+    setPersistenceNotice(`Exported ${rows.length} activities as Excel.`);
+  };
+
   const importBackup = async (file: File) => {
     if (!window.confirm("Importing a backup replaces the journal data currently stored in this browser. Continue?")) return;
     try {
@@ -442,7 +533,7 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
                   </div>
                   <div className={"settings__row"}>
                     <div><strong>Snap interval</strong><span>Editing increments stay independent from zoom.</span></div>
-                    <select aria-label="Snap interval" className={"settings__select"} value={preferences.snapMinutes} onChange={(event) => updatePreferences({ snapMinutes: Number(event.target.value) as TimelinePreferences["snapMinutes"] })}><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option></select>
+                    <select aria-label="Snap interval" className={"settings__select"} value={preferences.snapMinutes} onChange={(event) => updatePreferences({ snapMinutes: Number(event.target.value) as TimelinePreferences["snapMinutes"] })}><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option></select>
                   </div>
                   <div className={"settings__row"}>
                     <div><strong>Timezone</strong><span>Wall-clock dates and activity times use this zone.</span></div>
@@ -516,6 +607,32 @@ export function RoutePage({ eyebrow, title, description, note }: RoutePageProps)
 
                 {settingsTab === "data" && (
                 <section className={"settings__panel"} id="settings-panel-data" role="tabpanel" aria-labelledby="settings-tab-data">
+                  <div className={"settings__export"}>
+                    <div className={"settings__export-heading"}>
+                      <div><strong>Activity export</strong><span>Download your activity log for a date range.</span></div>
+                      <span className={"settings__export-count"}>{activities === null ? "Loading activities…" : `${activitiesInExportRange.length} ${activitiesInExportRange.length === 1 ? "activity" : "activities"}`}</span>
+                    </div>
+                    <div className={"settings__export-controls"}>
+                      <label>Date range<select aria-label="Export date range" className={"settings__select"} value={exportRange} onChange={(event) => {
+                        const nextRange = event.target.value as ActivityExportRange;
+                        if (nextRange === "custom" && (!exportStartDate || !exportEndDate)) {
+                          setExportStartDate(exportToday);
+                          setExportEndDate(exportToday);
+                        }
+                        setExportRange(nextRange);
+                      }}>{activityExportRanges.map((range) => <option value={range.value} key={range.value}>{range.label}</option>)}</select></label>
+                      {exportRange === "custom" && <>
+                        <label>From<input aria-label="Export start date" type="date" value={exportStartDate} onChange={(event) => setExportStartDate(event.target.value)} /></label>
+                        <label>To<input aria-label="Export end date" type="date" value={exportEndDate} onChange={(event) => setExportEndDate(event.target.value)} /></label>
+                      </>}
+                    </div>
+                    <div className={"settings__export-actions"}>
+                      <button className={"settings__toggle"} type="button" disabled={activities === null || !resolvedExportRange} onClick={() => exportActivityReport("xls")}>Export Excel</button>
+                      <button className={"settings__toggle"} type="button" disabled={activities === null || !resolvedExportRange} onClick={() => exportActivityReport("csv")}>Export CSV</button>
+                      <button className={"settings__toggle"} type="button" disabled={activities === null || !resolvedExportRange} onClick={() => exportActivityReport("pdf")}>Export PDF</button>
+                    </div>
+                    <p className={"settings__footnote"}>The date range applies to all formats. PDF opens a print window where you can choose Save as PDF.</p>
+                  </div>
                   <div className={"settings__row"}><div><strong>Activity backup</strong><span>Export a JSON copy or replace this browser&apos;s activities from a validated backup.</span></div><div className={"settings__backup-actions"}><button className={"settings__toggle"} type="button" onClick={exportBackup}>Export backup</button><button className={"settings__toggle"} type="button" onClick={() => importInputRef.current?.click()}>Import backup</button><input className={"settings__file-input"} ref={importInputRef} type="file" accept="application/json,.json" aria-label="Choose activity backup" onChange={(event) => { const file = event.target.files?.[0]; if (file) void importBackup(file); event.target.value = ""; }} /></div></div>
                 </section>
                 )}

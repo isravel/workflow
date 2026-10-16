@@ -245,6 +245,17 @@
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 
+  &--button {
+    border: 1px solid var(--color-accent);
+    cursor: pointer;
+    text-align: left;
+    transition: 160ms ease;
+
+    &:hover {
+      opacity: 0.6;
+    }
+  }
+
   &__dot {
     width: 7px;
     height: 7px;

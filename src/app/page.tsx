@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import {
   BarChart3,
@@ -67,7 +67,6 @@ import { buildTimelineLayout, timelineLayoutConstants } from "@/domain/timelineL
 import { layoutModeForWidth, responsiveBreakpoints, timelineLaneCapForMode, type LayoutMode } from "@/domain/layoutMode";
 import { loadJournal, saveJournal } from "@/repositories/activityRepository";
 
-const defaultActivityMinutes = 45;
 const viewModeStorageKey = "workflow.viewMode";
 const accentThemeStorageKey = "workflow.accentTheme";
 const defaultAccentTheme: ActivityColorToken = "violet-600";
@@ -192,6 +191,18 @@ type ActivityDraft = {
   notes: string;
   tags: string;
   taskId: string;
+};
+
+type ActivityDraftValue = {
+  title: string;
+  startAt: string;
+  endAt: string | null;
+  categoryId: string;
+  colorToken?: ActivityColorToken;
+  priority: ActivityPriority;
+  notes: string;
+  tags: string[];
+  taskId?: string;
 };
 
 type QuickEntryDraft = {
@@ -447,6 +458,234 @@ const taskPicker = (
   </label>
 );
 
+type ActivityDetailsDialogProps = {
+  dialogRef: React.RefObject<HTMLDialogElement | null>;
+  editingActivity: Activity | null;
+  availableCategories: ReturnType<typeof categoriesForPreferences>;
+  preferences: TimelinePreferences;
+  tasks: Task[];
+  onSaveDraft: (activityId: string, value: ActivityDraftValue, date: string) => void;
+  onDelete: (activity: Activity) => void;
+  onClose: () => void;
+};
+
+const ActivityDetailsDialog = memo(function ActivityDetailsDialog({
+  dialogRef,
+  editingActivity,
+  availableCategories,
+  preferences,
+  tasks,
+  onSaveDraft,
+  onDelete,
+  onClose,
+}: ActivityDetailsDialogProps) {
+  const [activityDraft, setActivityDraft] = useState<ActivityDraft | null>(null);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [draftStatus, setDraftStatus] = useState<"idle" | "saved" | "invalid">("idle");
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const initializedActivityIdRef = useRef<string | null>(null);
+
+  const editingActivityId = editingActivity?.id;
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!editingActivity) {
+      initializedActivityIdRef.current = null;
+      return;
+    }
+    if (!dialog || initializedActivityIdRef.current === editingActivity.id) return;
+    initializedActivityIdRef.current = editingActivity.id;
+    setActivityDraft(draftForActivity(editingActivity, defaultPriorityForCategory(preferences, editingActivity.categoryId)));
+    setDraftError(null);
+    setDraftStatus("idle");
+    if (!dialog.open) dialog.showModal();
+    const frame = window.requestAnimationFrame(() => titleInputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [dialogRef, editingActivity, preferences]);
+
+  useEffect(() => {
+    if (!editingActivityId || !activityDraft || initializedActivityIdRef.current !== editingActivityId) return;
+    const timeout = window.setTimeout(() => {
+      const result = activityPatchFromDraft(activityDraft);
+      if ("error" in result) {
+        setDraftError(result.error ?? "Invalid activity details.");
+        setDraftStatus("invalid");
+        return;
+      }
+      onSaveDraft(editingActivityId, result.value, activityDraft.date);
+      setDraftError(null);
+      setDraftStatus("saved");
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [activityDraft, editingActivityId, onSaveDraft]);
+
+  const updateActivityDraft = <Key extends keyof ActivityDraft>(key: Key, value: ActivityDraft[Key]) => {
+    setActivityDraft((current) => current ? { ...current, [key]: value } : current);
+    setDraftError(null);
+    setDraftStatus("idle");
+  };
+
+  const commitActivityDraft = () => {
+    if (!editingActivity || !activityDraft) return false;
+    const result = activityPatchFromDraft(activityDraft);
+    if ("error" in result) {
+      setDraftError(result.error ?? "Invalid activity details.");
+      setDraftStatus("invalid");
+      return false;
+    }
+    onSaveDraft(editingActivity.id, result.value, activityDraft.date);
+    setDraftError(null);
+    setDraftStatus("saved");
+    return true;
+  };
+
+  const closeActivityDetails = () => {
+    commitActivityDraft();
+    if (dialogRef.current?.open) {
+      dialogRef.current.close();
+      return;
+    }
+    onClose();
+  };
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className={"details-dialog"}
+      aria-labelledby="activity-details-title"
+      onClose={onClose}
+      onCancel={(event) => {
+        event.preventDefault();
+        closeActivityDetails();
+      }}
+    >
+      <form
+        className={"details-dialog__form"}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (commitActivityDraft()) closeActivityDetails();
+        }}
+      >
+        <div className={"details-dialog__header"}>
+          <div>
+            <p className={"app__eyebrow"}>Activity details</p>
+            <h2 className={"details-dialog__title"} id="activity-details-title">
+              {activityDraft?.title || editingActivity?.title || "New activity"}
+            </h2>
+          </div>
+          <button className={"button-icon"} type="button" aria-label="Close activity details" onClick={closeActivityDetails}>×</button>
+        </div>
+
+        {activityDraft && (
+          <div className={"details-dialog__fields"}>
+            <label className={"form-field"}>
+              <span>Title</span>
+              <input
+                ref={titleInputRef}
+                value={activityDraft.title}
+                onChange={(event) => updateActivityDraft("title", event.target.value)}
+                placeholder="What were you doing?"
+                autoComplete="off"
+              />
+            </label>
+
+            <label className={"form-field"}>
+              <span>Date</span>
+              <input
+                type="date"
+                value={activityDraft.date}
+                onChange={(event) => updateActivityDraft("date", event.target.value)}
+              />
+            </label>
+
+            <div className={"form-field__row"}>
+              <label className={"form-field"}>
+                <span>Start</span>
+                <input
+                  type="time"
+                  value={activityDraft.start}
+                  onChange={(event) => updateActivityDraft("start", event.target.value)}
+                />
+              </label>
+              <label className={"form-field"}>
+                <span>End</span>
+                <input
+                  type="time"
+                  value={activityDraft.end}
+                  onChange={(event) => updateActivityDraft("end", event.target.value)}
+                />
+              </label>
+            </div>
+
+            {categoryRadioGroup(
+              availableCategories,
+              activityDraft.categoryId,
+              (categoryId) => updateActivityDraft("categoryId", categoryId),
+              "activity-category",
+            )}
+
+            {priorityRadioGroup(
+              preferences.priorityOptions,
+              activityDraft.priority,
+              (priority) => updateActivityDraft("priority", priority),
+            )}
+
+            {taskPicker(
+              tasks,
+              activityDraft.taskId,
+              (taskId) => updateActivityDraft("taskId", taskId),
+              "activity-task",
+            )}
+
+            {colorRadioGroup(
+              activityDraft.colorToken,
+              (colorToken) => updateActivityDraft("colorToken", colorToken),
+              "activity-color",
+            )}
+
+            <label className={"form-field"}>
+              <span>Notes</span>
+              <textarea
+                value={activityDraft.notes}
+                onChange={(event) => updateActivityDraft("notes", event.target.value)}
+                rows={5}
+                placeholder="A little context for your future self."
+              />
+            </label>
+
+            <label className={"form-field"}>
+              <span>Tags <small>comma-separated</small></span>
+              <input
+                value={activityDraft.tags}
+                onChange={(event) => updateActivityDraft("tags", event.target.value)}
+                placeholder="research, writing"
+              />
+            </label>
+          </div>
+        )}
+
+        <div className={"details-dialog__footer"}>
+          <p className={"details-dialog__status"} aria-live="polite">
+            {draftError ?? (draftStatus === "saved" ? "Saved" : "Changes save automatically.")}
+          </p>
+          <div className={"toolbar__actions"}>
+            <button
+              className={`${"button-text"} ${"button-text--danger"}`}
+              type="button"
+              onClick={() => {
+                if (editingActivity) onDelete(editingActivity);
+              }}
+            >
+              Delete activity
+            </button>
+            <button className={"button-text"} type="submit">Done</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+  );
+});
+
 const timeInputForMinutes = (minutes: number) =>
   `${Math.floor(minutes / 60).toString().padStart(2, "0")}:${(minutes % 60).toString().padStart(2, "0")}`;
 
@@ -472,13 +711,10 @@ export default function Home() {
   const [resizeMode, setResizeMode] = useState(false);
   const [gesture, setGesture] = useState<TimelineGesture | null>(null);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(null);
-  const [activityDraft, setActivityDraft] = useState<ActivityDraft | null>(null);
   const [quickEntryDraft, setQuickEntryDraft] = useState<QuickEntryDraft | null>(null);
   const [quickEntryError, setQuickEntryError] = useState<string | null>(null);
   const [timerRecovery, setTimerRecovery] = useState<TimerRecovery | null>(null);
   const [compactActivityIds, setCompactActivityIds] = useState<Set<string>>(() => new Set());
-  const [draftError, setDraftError] = useState<string | null>(null);
-  const [draftStatus, setDraftStatus] = useState<"idle" | "saved" | "invalid">("idle");
   const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
   const [undoNotice, setUndoNotice] = useState<string | null>(null);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("desktop");
@@ -502,14 +738,14 @@ export default function Home() {
   const detailsDialogRef = useRef<HTMLDialogElement>(null);
   const quickEntryDialogRef = useRef<HTMLDialogElement>(null);
   const recoveryDialogRef = useRef<HTMLDialogElement>(null);
-  const titleInputRef = useRef<HTMLInputElement>(null);
   const quickEntryTitleRef = useRef<HTMLInputElement>(null);
+  const quickEntryDurationRef = useRef<HTMLInputElement>(null);
   const taskTitleInputRef = useRef<HTMLInputElement>(null);
   const detailsUndoRecordedRef = useRef(false);
   const undoNoticeTimeoutRef = useRef<number | null>(null);
   const lastClockDateRef = useRef<string | null>(null);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
-  const availableCategories = categoriesForPreferences(preferences);
+  const availableCategories = useMemo(() => categoriesForPreferences(preferences), [preferences]);
   const categoryCatalog = [...categories, ...preferences.customCategories];
   const [timelineScrollLeft, setTimelineScrollLeft] = useState(0);
   const timelineStartMinutes = minutesForHour(preferences.startHour);
@@ -569,7 +805,6 @@ export default function Home() {
     setSelectedDate(entry.selectedDate);
     setResizeMode(false);
     setEditingActivityId(null);
-    setActivityDraft(null);
     setUndoStack((current) => current.slice(0, -1));
     setUndoNotice(null);
     window.requestAnimationFrame(() => {
@@ -655,18 +890,10 @@ export default function Home() {
   }, [activities, tasks, hydrated]);
 
   useEffect(() => {
-    const dialog = detailsDialogRef.current;
-    if (!editingActivityId || !dialog) return;
-    if (!dialog.open) dialog.showModal();
-    const frame = window.requestAnimationFrame(() => titleInputRef.current?.focus());
-    return () => window.cancelAnimationFrame(frame);
-  }, [editingActivityId]);
-
-  useEffect(() => {
     const dialog = quickEntryDialogRef.current;
-    if (!quickEntryDraft || !dialog) return;
-    if (!dialog.open) dialog.showModal();
-    const frame = window.requestAnimationFrame(() => quickEntryTitleRef.current?.focus());
+    if (!quickEntryDraft || !dialog || dialog.open) return;
+    dialog.showModal();
+    const frame = window.requestAnimationFrame(() => quickEntryDurationRef.current?.focus());
     return () => window.cancelAnimationFrame(frame);
   }, [quickEntryDraft]);
 
@@ -681,38 +908,6 @@ export default function Home() {
     const frame = window.requestAnimationFrame(() => taskTitleInputRef.current?.focus());
     return () => window.cancelAnimationFrame(frame);
   }, [taskDraft, tasksOpen]);
-
-  useEffect(() => {
-    if (!editingActivityId || !activityDraft) return;
-    const timeout = window.setTimeout(() => {
-      const result = activityPatchFromDraft(activityDraft);
-      if ("error" in result) {
-        setDraftError(result.error ?? "Invalid activity details.");
-        setDraftStatus("invalid");
-        return;
-      }
-
-      const currentActivity = activities.find((activity) => activity.id === editingActivityId);
-      if (!currentActivity) return;
-      const nextActivity = { ...currentActivity, ...result.value };
-      if (JSON.stringify(currentActivity) === JSON.stringify(nextActivity)) {
-        setDraftError(null);
-        setDraftStatus("saved");
-        return;
-      }
-      if (!detailsUndoRecordedRef.current) {
-        recordUndo("activity details");
-        detailsUndoRecordedRef.current = true;
-      }
-      setActivities((current) => current.map((activity) => activity.id === editingActivityId
-        ? { ...activity, ...result.value, updatedAt: activityTimestamp() }
-        : activity));
-      setSelectedDate(activityDraft.date);
-      setDraftError(null);
-      setDraftStatus("saved");
-    }, 300);
-    return () => window.clearTimeout(timeout);
-  }, [activityDraft, activities, editingActivityId, recordUndo]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setClock(runtimeClock()), 1000);
@@ -738,34 +933,19 @@ export default function Home() {
     setSelectedActivityId(activity.id);
     setSelectedDate(dateFromTimestamp(activity.startAt));
     setResizeMode(false);
-    setDraftError(null);
-    setDraftStatus("idle");
     detailsUndoRecordedRef.current = false;
-    setActivityDraft(draftForActivity(activity, defaultPriorityForCategory(preferences, activity.categoryId)));
     setEditingActivityId(activity.id);
-  }, [preferences]);
+  }, []);
 
-  const resetActivityDetails = () => {
+  const resetActivityDetails = useCallback(() => {
     setEditingActivityId(null);
-    setActivityDraft(null);
-    setDraftError(null);
-    setDraftStatus("idle");
     detailsUndoRecordedRef.current = false;
     if (selectedActivityId) {
       window.requestAnimationFrame(() => activityRefs.current.get(selectedActivityId)?.focus());
     }
-  };
+  }, [selectedActivityId]);
 
-  const closeActivityDetails = () => {
-    commitActivityDraft();
-    if (detailsDialogRef.current?.open) {
-      detailsDialogRef.current.close();
-      return;
-    }
-    resetActivityDetails();
-  };
-
-  const deleteActivity = (activity: Activity) => {
+  const deleteActivity = useCallback((activity: Activity) => {
     recordUndo("activity deletion");
     setActivities((current) => current.filter((item) => item.id !== activity.id));
     setSelectedActivityId((current) => current === activity.id ? null : current);
@@ -773,38 +953,22 @@ export default function Home() {
       if (detailsDialogRef.current?.open) detailsDialogRef.current.close();
       else resetActivityDetails();
     }
-  };
+  }, [editingActivityId, recordUndo, resetActivityDetails]);
 
-  const updateActivityDraft = <Key extends keyof ActivityDraft>(key: Key, value: ActivityDraft[Key]) => {
-    setActivityDraft((current) => current ? { ...current, [key]: value } : current);
-    setDraftError(null);
-    setDraftStatus("idle");
-  };
-
-  const commitActivityDraft = () => {
-    if (!editingActivityId || !activityDraft) return false;
-    const result = activityPatchFromDraft(activityDraft);
-    if ("error" in result) {
-      setDraftError(result.error ?? "Invalid activity details.");
-      setDraftStatus("invalid");
-      return false;
-    }
-    const currentActivity = activities.find((activity) => activity.id === editingActivityId);
-    if (!currentActivity) return false;
-    const nextActivity = { ...currentActivity, ...result.value };
-    if (JSON.stringify(currentActivity) === JSON.stringify(nextActivity)) return true;
+  const saveActivityDraft = useCallback((activityId: string, value: ActivityDraftValue, date: string) => {
+    const currentActivity = activities.find((activity) => activity.id === activityId);
+    if (!currentActivity) return;
+    const nextActivity = { ...currentActivity, ...value };
+    if (JSON.stringify(currentActivity) === JSON.stringify(nextActivity)) return;
     if (!detailsUndoRecordedRef.current) {
       recordUndo("activity details");
       detailsUndoRecordedRef.current = true;
     }
-    setActivities((current) => current.map((activity) => activity.id === editingActivityId
-      ? { ...activity, ...result.value, updatedAt: activityTimestamp() }
+    setActivities((current) => current.map((activity) => activity.id === activityId
+      ? { ...activity, ...value, updatedAt: activityTimestamp() }
       : activity));
-    setSelectedDate(activityDraft.date);
-    setDraftError(null);
-    setDraftStatus("saved");
-    return true;
-  };
+    setSelectedDate(date);
+  }, [activities, recordUndo]);
 
   const createActivityAt = useCallback((dayIso: string, startMinutes: number, endMinutes: number, title = "New activity") => {
     const id = newActivityId(activityIdCounter, "activity-new");
@@ -838,7 +1002,7 @@ export default function Home() {
       title: "",
       date: selectedDate,
       start: timeInputForMinutes(start),
-      duration: `${defaultActivityMinutes}m`,
+      duration: "",
       categoryId: "deep-work",
       colorToken: "",
       taskId,
@@ -854,7 +1018,8 @@ export default function Home() {
   const commitQuickEntry = () => {
     if (!quickEntryDraft) return false;
     const startMatch = quickEntryDraft.start.match(/^(\d{2}):(\d{2})$/);
-    const durationMinutes = durationMinutesFromInput(quickEntryDraft.duration);
+    const durationInput = quickEntryDraft.duration.trim();
+    const durationMinutes = durationInput ? durationMinutesFromInput(durationInput) : null;
     if (!quickEntryDraft.title.trim()) {
       setQuickEntryError("Add a title before creating the activity.");
       return false;
@@ -863,13 +1028,13 @@ export default function Home() {
       setQuickEntryError("Choose a valid start time.");
       return false;
     }
-    if (!durationMinutes) {
+    if (durationInput && !durationMinutes) {
       setQuickEntryError("Use a duration such as 45m, 1h, or 1h30.");
       return false;
     }
     const startMinutes = Number(startMatch[1]) * 60 + Number(startMatch[2]);
-    const endMinutes = startMinutes + durationMinutes;
-    if (endMinutes > 24 * 60) {
+    const endMinutes = durationMinutes === null ? null : startMinutes + durationMinutes;
+    if (endMinutes !== null && endMinutes > 24 * 60) {
       setQuickEntryError("The activity must finish before midnight.");
       return false;
     }
@@ -878,7 +1043,7 @@ export default function Home() {
       id: newActivityId(activityIdCounter, "activity-quick"),
       title: quickEntryDraft.title.trim(),
       startAt: timestampForMinutes(quickEntryDraft.date, startMinutes),
-      endAt: timestampForMinutes(quickEntryDraft.date, endMinutes),
+      endAt: endMinutes === null ? null : timestampForMinutes(quickEntryDraft.date, endMinutes),
       categoryId: quickEntryDraft.categoryId,
       notes: "",
       tags: [],
@@ -889,7 +1054,12 @@ export default function Home() {
       updatedAt: activityTimestamp(),
     };
     recordUndo("activity creation");
-    setActivities((current) => [...current, newActivity]);
+    setActivities((current) => [
+      ...current.map((activity) => durationMinutes === null && activity.endAt === null
+        ? { ...activity, endAt: new Date(clock).toISOString() }
+        : activity),
+      newActivity,
+    ]);
     setSelectedDate(quickEntryDraft.date);
     setSelectedActivityId(newActivity.id);
     closeQuickEntry();
@@ -1813,10 +1983,17 @@ export default function Home() {
                 title="Toggle rest-day rows for this view"
                 onClick={() => setShowRestDays((current) => !current)}
               >
-                <CalendarDays size={14} /> Rest days · {showRestDays ? "Shown" : "Hidden"}
+                <CalendarDays size={14} /> {showRestDays ? "Hide rest days" : "Show rest days"}
               </button>
-              {runningActivity && <div className={"timer"}><span className={"timer__dot"} /> In progress · {formatElapsed(runningActivity.startAt)}</div>}
-              <button className={"button-text"} type="button" onClick={toggleTimer}>{runningActivity ? <><Clock3 size={14} /> Stop timer</> : <><Play size={14} /> Start timer</>}</button>
+              <button
+                className={runningActivity ? "timer timer--button" : "button-text"}
+                type="button"
+                aria-label={runningActivity ? `Stop timer. In progress for ${formatElapsed(runningActivity.startAt)}` : "Start timer"}
+                title={runningActivity ? "Stop timer" : "Start timer"}
+                onClick={toggleTimer}
+              >
+                {runningActivity ? <><span className={"timer__dot"} aria-hidden="true" /> <span>In progress · {formatElapsed(runningActivity.startAt)}</span></> : <><Play size={14} /> Start timer</>}
+              </button>
               <div className={"view-switcher"} role="group" aria-label="Activity view">
                 {viewModeOptions.map((option) => (
                   <button
@@ -2505,15 +2682,21 @@ export default function Home() {
                 <label className={"form-field"}>
                   <span>Duration</span>
                   <input
+                    ref={quickEntryDurationRef}
                     value={quickEntryDraft.duration}
                     onChange={(event) => {
                       setQuickEntryDraft((current) => current ? { ...current, duration: event.target.value } : current);
                       setQuickEntryError(null);
                     }}
-                    placeholder="45m"
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return;
+                      event.preventDefault();
+                      quickEntryTitleRef.current?.focus();
+                    }}
+                    placeholder="Optional"
                     inputMode="text"
                   />
-                  <small>Examples: 45m, 1h, 1h30</small>
+                  <small>Examples: 45m, 1h, 1h30. Leave blank to keep it running.</small>
                 </label>
                 {taskPicker(
                   tasks,
@@ -2555,7 +2738,7 @@ export default function Home() {
 
             {quickEntryError && <p className={"form__error"} role="alert">{quickEntryError}</p>}
             <div className={"details-dialog__footer"}>
-              <p className={"details-dialog__status"}>Press Enter to create</p>
+              <p className={"details-dialog__status"}>Enter in duration moves to title; Enter in title creates.</p>
               <div className={"toolbar__actions"}>
                 <button className={"button-text"} type="button" onClick={closeQuickEntry}>Cancel</button>
                 <button className={"button-primary"} type="submit">Create activity</button>
@@ -2564,140 +2747,16 @@ export default function Home() {
           </form>
         </dialog>
 
-        <dialog
-          ref={detailsDialogRef}
-          className={"details-dialog"}
-          aria-labelledby="activity-details-title"
+        <ActivityDetailsDialog
+          dialogRef={detailsDialogRef}
+          editingActivity={editingActivity}
+          availableCategories={availableCategories}
+          preferences={preferences}
+          tasks={tasks}
+          onSaveDraft={saveActivityDraft}
+          onDelete={deleteActivity}
           onClose={resetActivityDetails}
-          onCancel={(event) => {
-            event.preventDefault();
-            closeActivityDetails();
-          }}
-        >
-          <form
-            className={"details-dialog__form"}
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (commitActivityDraft()) closeActivityDetails();
-            }}
-          >
-            <div className={"details-dialog__header"}>
-              <div>
-                <p className={"app__eyebrow"}>Activity details</p>
-                <h2 className={"details-dialog__title"} id="activity-details-title">
-                  {editingActivity?.title || "New activity"}
-                </h2>
-              </div>
-              <button className={"button-icon"} type="button" aria-label="Close activity details" onClick={closeActivityDetails}>×</button>
-            </div>
-
-            {activityDraft && (
-              <div className={"details-dialog__fields"}>
-                <label className={"form-field"}>
-                  <span>Title</span>
-                  <input
-                    ref={titleInputRef}
-                    value={activityDraft.title}
-                    onChange={(event) => updateActivityDraft("title", event.target.value)}
-                    placeholder="What were you doing?"
-                    autoComplete="off"
-                  />
-                </label>
-
-                <label className={"form-field"}>
-                  <span>Date</span>
-                  <input
-                    type="date"
-                    value={activityDraft.date}
-                    onChange={(event) => updateActivityDraft("date", event.target.value)}
-                  />
-                </label>
-
-                <div className={"form-field__row"}>
-                  <label className={"form-field"}>
-                    <span>Start</span>
-                    <input
-                      type="time"
-                      value={activityDraft.start}
-                      onChange={(event) => updateActivityDraft("start", event.target.value)}
-                    />
-                  </label>
-                  <label className={"form-field"}>
-                    <span>End</span>
-                    <input
-                      type="time"
-                      value={activityDraft.end}
-                      onChange={(event) => updateActivityDraft("end", event.target.value)}
-                    />
-                  </label>
-                </div>
-
-                {categoryRadioGroup(
-                  availableCategories,
-                  activityDraft.categoryId,
-                  (categoryId) => updateActivityDraft("categoryId", categoryId),
-                  "activity-category",
-                )}
-
-                {priorityRadioGroup(
-                  preferences.priorityOptions,
-                  activityDraft.priority,
-                  (priority) => updateActivityDraft("priority", priority),
-                )}
-
-                {taskPicker(
-                  tasks,
-                  activityDraft.taskId,
-                  (taskId) => updateActivityDraft("taskId", taskId),
-                  "activity-task",
-                )}
-
-                {colorRadioGroup(
-                  activityDraft.colorToken,
-                  (colorToken) => updateActivityDraft("colorToken", colorToken),
-                  "activity-color",
-                )}
-
-                <label className={"form-field"}>
-                  <span>Notes</span>
-                  <textarea
-                    value={activityDraft.notes}
-                    onChange={(event) => updateActivityDraft("notes", event.target.value)}
-                    rows={5}
-                    placeholder="A little context for your future self."
-                  />
-                </label>
-
-                <label className={"form-field"}>
-                  <span>Tags <small>comma-separated</small></span>
-                  <input
-                    value={activityDraft.tags}
-                    onChange={(event) => updateActivityDraft("tags", event.target.value)}
-                    placeholder="research, writing"
-                  />
-                </label>
-              </div>
-            )}
-
-            <div className={"details-dialog__footer"}>
-              <p className={"details-dialog__status"} aria-live="polite">
-                {draftError ?? (draftStatus === "saved" ? "Saved" : "Changes save automatically.")}
-              </p>
-              <div className={"toolbar__actions"}>
-                <button
-                  className={`${"button-text"} ${"button-text--danger"}`}
-                  type="button"
-                  onClick={() => {
-                    if (editingActivity) deleteActivity(editingActivity);
-                  }}
-                >
-                  Delete activity
-                </button>
-                <button className={"button-text"} type="submit">Done</button>
-              </div>
-            </div>
-          </form>
-        </dialog>
+        />
       </main>
     </div>
   );
